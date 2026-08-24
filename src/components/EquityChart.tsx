@@ -4,7 +4,7 @@ import type { ValuePoint } from "../types";
 
 const time = (value: string) => Math.floor(new Date(value).getTime() / 1000) as UTCTimestamp;
 
-export default function EquityChart({ equity, drawdown }: { equity: ValuePoint[]; drawdown: ValuePoint[] }) {
+export default function EquityChart({ equity, drawdown, forwardStart }: { equity: ValuePoint[]; drawdown: ValuePoint[]; forwardStart?: string }) {
   const container = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!container.current) return;
@@ -24,8 +24,30 @@ export default function EquityChart({ equity, drawdown }: { equity: ValuePoint[]
       chart.panes()[0]?.setHeight(330);
       chart.panes()[1]?.setHeight(110);
     }
+    let separator: HTMLDivElement | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let updateSeparator: (() => void) | null = null;
+    if (forwardStart) {
+      separator = document.createElement("div");
+      separator.className = "forward-equity-separator";
+      separator.innerHTML = "<span>Forward test</span>";
+      container.current.appendChild(separator);
+      updateSeparator = () => {
+        const x = chart.timeScale().timeToCoordinate(time(forwardStart));
+        if (separator) separator.style.left = x == null ? "-100px" : `${x}px`;
+      };
+      chart.timeScale().subscribeVisibleLogicalRangeChange(updateSeparator);
+      resizeObserver = new ResizeObserver(updateSeparator);
+      resizeObserver.observe(container.current);
+    }
     chart.timeScale().fitContent();
-    return () => chart.remove();
-  }, [equity, drawdown]);
+    requestAnimationFrame(() => updateSeparator?.());
+    return () => {
+      if (updateSeparator) chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateSeparator);
+      resizeObserver?.disconnect();
+      separator?.remove();
+      chart.remove();
+    };
+  }, [equity, drawdown, forwardStart]);
   return <div className="equity-chart" ref={container} aria-label="Equity curve and drawdown chart" />;
 }

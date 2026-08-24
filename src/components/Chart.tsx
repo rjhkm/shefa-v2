@@ -27,7 +27,7 @@ const withOpacity = (color: string, opacity: number) => {
 
 type ChartData = Pick<Analysis, "candles" | "plot_schema" | "plots" | "trades">;
 
-export default function StrategyChart({ analysis, appearance, theme, tradeLabelMode = "cash", initialCapital = 10_000, pipSize = 0.01, focusTradeId }: { analysis: ChartData; appearance: ChartAppearance; theme: "dark" | "light"; tradeLabelMode?: TradeLabelMode; initialCapital?: number; pipSize?: number; focusTradeId?: number | null }) {
+export default function StrategyChart({ analysis, appearance, theme, tradeLabelMode = "pips", initialCapital = 10_000, pipSize = 0.01, focusTradeId }: { analysis: ChartData; appearance: ChartAppearance; theme: "dark" | "light"; tradeLabelMode?: TradeLabelMode; initialCapital?: number; pipSize?: number; focusTradeId?: number | null }) {
   const container = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
 
@@ -199,8 +199,7 @@ function exitPnlLabel(trade: Trade, mode: TradeLabelMode, initialCapital: number
     return `${percent >= 0 ? "+" : ""}${formatNumber(percent, 2)}%`;
   }
   if (mode === "pips") {
-    const direction = trade.direction === "long" ? 1 : -1;
-    const pips = pipSize > 0 ? (trade.exit_price - trade.entry_price) * direction / pipSize : 0;
+    const pips = trade.net_pnl * 10;
     return `${pips >= 0 ? "+" : ""}${formatNumber(pips, 1)} pips`;
   }
   return `${trade.net_pnl >= 0 ? "+" : "−"}${money.format(Math.abs(trade.net_pnl))}`;

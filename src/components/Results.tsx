@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { analyzeTrades, type HistogramBin, type PeriodSummary } from "../backtestAnalytics";
 import { formatDateTime, formatInteger, formatNumber, money } from "../format";
-import type { BacktestResult, OutcomeSummary, Trade } from "../types";
+import type { BacktestResult, OutcomeSummary, ResultPeriod, Trade } from "../types";
 import EquityChart from "./EquityChart";
 import MonthlySummary from "./MonthlySummary";
 
@@ -12,6 +12,8 @@ type Tab = typeof tabs[number][0];
 export default function Results({ analysis, initialCapital = 10_000, onSelectTrade }: { analysis: BacktestResult; initialCapital?: number; onSelectTrade?: (trade: Trade) => void }) {
   const [activeTab, setActiveTab] = useState<Tab>("metrics");
   const analytics = useMemo(() => analyzeTrades(analysis.trades, initialCapital, analysis.fingerprint, analysis.candles), [analysis, initialCapital]);
+  const forwardCapital = analysis.equity.at(-1)?.value ?? initialCapital;
+  const forwardAnalytics = useMemo(() => analysis.forward_test ? analyzeTrades(analysis.forward_test.trades, forwardCapital, analysis.forward_test.fingerprint, analysis.candles) : null, [analysis, forwardCapital]);
   useEffect(() => { setActiveTab("metrics"); }, [analysis.fingerprint]);
   return <section className="results">
     <div className="result-tabs" role="tablist" aria-label="Backtest results">
@@ -19,18 +21,23 @@ export default function Results({ analysis, initialCapital = 10_000, onSelectTra
       <span className="fingerprint">RUN {analysis.saved_run_id.toUpperCase()}</span>
     </div>
     <div className="result-panel" role="tabpanel">
-      {activeTab === "metrics" && <KeyMetrics analysis={analysis} />}
-      {activeTab === "types" && <TradesByType trades={analysis.trades} />}
-      {activeTab === "calendar" && <CalendarMatrix analytics={analytics} />}
-      {activeTab === "strategy" && <StrategyMetrics analysis={analysis} />}
-      {activeTab === "equity" && <EquityView analysis={analysis} analytics={analytics} />}
+      {activeTab === "metrics" && <PeriodPair forward={analysis.forward_test} main={<KeyMetrics analysis={analysis} />} forwardContent={analysis.forward_test && <KeyMetrics analysis={analysis.forward_test} />} />}
+      {activeTab === "types" && <PeriodPair forward={analysis.forward_test} main={<TradesByType trades={analysis.trades} />} forwardContent={analysis.forward_test && <TradesByType trades={analysis.forward_test.trades} />} />}
+      {activeTab === "calendar" && <PeriodPair forward={analysis.forward_test} main={<CalendarMatrix analytics={analytics} />} forwardContent={forwardAnalytics && <CalendarMatrix analytics={forwardAnalytics} />} />}
+      {activeTab === "strategy" && <PeriodPair forward={analysis.forward_test} main={<StrategyMetrics analysis={analysis} />} forwardContent={analysis.forward_test && <StrategyMetrics analysis={analysis.forward_test} />} />}
+      {activeTab === "equity" && <EquityView analysis={analysis} analytics={analytics} forwardAnalytics={forwardAnalytics} />}
       {activeTab === "trades" && <TradeList analysis={analysis} onSelectTrade={onSelectTrade} />}
-      {activeTab === "risk" && <RiskRobustness analysis={analysis} analytics={analytics} />}
+      {activeTab === "risk" && <PeriodPair forward={analysis.forward_test} main={<RiskRobustness analysis={analysis} analytics={analytics} />} forwardContent={analysis.forward_test && forwardAnalytics && <RiskRobustness analysis={analysis.forward_test} analytics={forwardAnalytics} />} />}
     </div>
   </section>;
 }
 
-function KeyMetrics({ analysis }: { analysis: BacktestResult }) {
+function PeriodPair({ forward, main, forwardContent }: { forward?: ResultPeriod | null; main: React.ReactNode; forwardContent: React.ReactNode }) {
+  if (!forward) return main;
+  return <><section className="result-period"><div className="period-heading">Main backtest</div>{main}</section><section className="result-period forward-period"><div className="period-heading">Forward test</div>{forwardContent}</section></>;
+}
+
+function KeyMetrics({ analysis }: { analysis: ResultPeriod }) {
   const { metrics } = analysis;
   return <><SectionHeading eyebrow="Performance overview" title="Key metrics" detail={`${analysis.strategy.name} · v${analysis.strategy.version}`} /><div className="metric-grid">
     <Metric label="Net profit" value={money.format(metrics.net_profit)} tone={metrics.net_profit >= 0 ? "positive" : "negative"} detail={`${formatNumber(metrics.return_percent, 2)}% return`} />
@@ -71,28 +78,36 @@ function CalendarMatrix({ analytics }: { analytics: ReturnType<typeof analyzeTra
   })}<td className={month.netR >= 0 ? "positive" : "negative"}><strong>{signed(month.netR)}R</strong><small>{money.format(month.netProfit)}</small></td><td>{formatInteger(month.trades)}</td><td>{formatNumber(month.winRate, 1)}%</td><td>{formatRatio(month.profitFactor)}</td><td className="negative">{money.format(month.maxDrawdown)}</td></tr>)}</tbody></table></div>{tooltip && createPortal(<div className="calendar-tooltip" role="tooltip" style={{ left: tooltip.left, top: tooltip.top }}>{tooltip.text}</div>, document.body)}</>;
 }
 
-function StrategyMetrics({ analysis }: { analysis: BacktestResult }) {
+function StrategyMetrics({ analysis }: { analysis: ResultPeriod }) {
   const diagnostics = analysis.strategy_diagnostics;
   const contexts = Object.entries(diagnostics.context_outcomes);
   return <><SectionHeading eyebrow="Strategy-specific" title="Diagnostic metrics" detail="Signal-time context and post-trade behavior" /><section className="diagnostic-section"><h3>Trade excursion</h3><div className="diagnostic-overview"><Diagnostic label="Avg. favourable excursion" value={`${formatNumber(diagnostics.excursion.average_max_favorable_r, 2)}R`} detail={`${formatNumber(diagnostics.excursion.reached_one_r_percent, 1)}% reached +1R`} /><Diagnostic label="Avg. adverse excursion" value={`${formatNumber(diagnostics.excursion.average_max_adverse_r, 2)}R`} detail={`${formatNumber(diagnostics.excursion.reached_half_r_percent, 1)}% reached +0.5R`} /><Diagnostic label="OHLC collisions" value={formatInteger(diagnostics.excursion.target_stop_collision_count)} detail="bars touching stop and target" /></div></section><section className="diagnostic-section"><h3>Exit behavior</h3><DiagnosticTable title="Outcomes by exit reason" headers={["Exit", "Trades", "Net P&L", "Win rate", "Avg R"]} rows={diagnostics.exit_reasons.map((item) => [humanize(item.label), formatInteger(item.trade_count), money.format(item.net_profit), `${formatNumber(item.win_rate, 1)}%`, `${formatNumber(item.average_result_r, 2)}R`])} /></section><section className="diagnostic-section"><h3>Signal context</h3>{contexts.length ? <div className="context-tables">{contexts.map(([key, item]) => <DiagnosticTable key={key} title={item.label} subtitle={`Signal-time value · ${item.unit}`} headers={["Range", "Trades", "Net P&L", "Win rate", "Avg R"]} rows={item.buckets.map((bucket) => [`${formatNumber(bucket.low, 3)}–${formatNumber(bucket.high, 3)}`, formatInteger(bucket.trade_count), money.format(bucket.net_profit), `${formatNumber(bucket.win_rate, 1)}%`, `${formatNumber(bucket.average_result_r, 2)}R`])} />)}</div> : <EmptyResult>No analyzable signal-context fields for this strategy.</EmptyResult>}</section></>;
 }
 
-function EquityView({ analysis, analytics }: { analysis: BacktestResult; analytics: ReturnType<typeof analyzeTrades> }) {
-  const endingEquity = analysis.equity.at(-1)?.value;
-  return <><SectionHeading eyebrow="Account curve" title="Equity & drawdown" detail={endingEquity == null ? "No equity points" : `${money.format(endingEquity)} ending equity`} />{analysis.equity.length ? <EquityChart equity={analysis.equity} drawdown={analysis.drawdown} /> : <EmptyResult>No equity points are available for this run.</EmptyResult>}<div className="equity-monthly-summary"><MonthlySummary rows={analytics.calendar} /></div></>;
+function EquityView({ analysis, analytics, forwardAnalytics }: { analysis: BacktestResult; analytics: ReturnType<typeof analyzeTrades>; forwardAnalytics: ReturnType<typeof analyzeTrades> | null }) {
+  const endingEquity = analysis.forward_test?.equity.at(-1)?.value ?? analysis.equity.at(-1)?.value;
+  const equity = [...analysis.equity, ...(analysis.forward_test?.equity || [])];
+  const drawdown = [...analysis.drawdown, ...(analysis.forward_test?.drawdown || [])];
+  return <><SectionHeading eyebrow="Account curve" title="Equity & drawdown" detail={endingEquity == null ? "No equity points" : `${money.format(endingEquity)} ending equity`} />{equity.length ? <EquityChart equity={equity} drawdown={drawdown} forwardStart={analysis.forward_test?.start_time} /> : <EmptyResult>No equity points are available for this run.</EmptyResult>}<div className="equity-monthly-summary"><MonthlySummary rows={analytics.calendar} forwardRows={forwardAnalytics?.calendar} /></div></>;
 }
 
 function TradeList({ analysis, onSelectTrade }: { analysis: BacktestResult; onSelectTrade?: (trade: Trade) => void }) {
   const pageSize = 25;
   const [page, setPage] = useState(1);
-  const pageCount = Math.max(1, Math.ceil(analysis.trades.length / pageSize));
-  const visibleTrades = useMemo(() => analysis.trades.slice((page - 1) * pageSize, page * pageSize), [analysis.trades, page]);
-  useEffect(() => { setPage(1); }, [analysis.fingerprint]);
+  const [side, setSide] = useState("all");
+  const [reason, setReason] = useState("all");
+  const [sort, setSort] = useState<"asc" | "desc">("asc");
+  const allTrades = useMemo(() => [...analysis.trades.map((trade) => ({ trade, period: "Backtest" })), ...(analysis.forward_test?.trades || []).map((trade) => ({ trade, period: "Forward" }))], [analysis]);
+  const reasons = useMemo(() => [...new Set(allTrades.map(({ trade }) => trade.exit_reason))].sort(), [allTrades]);
+  const filtered = useMemo(() => allTrades.filter(({ trade }) => (side === "all" || trade.direction === side) && (reason === "all" || trade.exit_reason === reason)).sort((left, right) => (Date.parse(left.trade.entry_time) - Date.parse(right.trade.entry_time)) * (sort === "asc" ? 1 : -1)), [allTrades, reason, side, sort]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const visibleTrades = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page]);
+  useEffect(() => { setPage(1); }, [analysis.fingerprint, reason, side, sort]);
   const open = (trade: Trade) => { onSelectTrade?.(trade); document.querySelector(".chart-shell")?.scrollIntoView({ behavior: "smooth", block: "center" }); };
-  return <><SectionHeading eyebrow="Trade ledger" title={`${formatInteger(analysis.trades.length)} completed positions`} detail={onSelectTrade ? "Select a row to inspect it on the candle chart" : undefined} /><div className="table-wrap"><table className="trade-table"><thead><tr><th>#</th><th>Side</th><th>Entry</th><th>Entry SL</th><th>Entry TP</th><th>Exit</th><th>Reason</th><th>Qty</th><th>Net P&amp;L</th><th>Result</th></tr></thead><tbody>{analysis.trades.length === 0 ? <tr><td colSpan={10} className="empty-row">No qualified trades in this dataset and configuration.</td></tr> : visibleTrades.map((trade) => <tr key={trade.trade_id} className={onSelectTrade ? "selectable-trade" : ""} tabIndex={onSelectTrade ? 0 : undefined} onClick={() => open(trade)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") open(trade); }}><td>{formatInteger(trade.trade_id)}</td><td><span className={`side ${trade.direction}`}>{trade.direction}</span></td><td><strong>{formatNumber(trade.entry_price, 2)}</strong><small>{formatDateTime(trade.entry_time)}</small></td><td>{formatNumber(trade.initial_stop, 2)}</td><td>{formatNumber(trade.initial_target, 2)}</td><td><strong>{formatNumber(trade.exit_price, 2)}</strong><small>{formatDateTime(trade.exit_time)}</small></td><td>{humanize(trade.exit_reason)}</td><td>{formatNumber(trade.quantity, 2)}</td><td className={trade.net_pnl >= 0 ? "positive" : "negative"}>{money.format(trade.net_pnl)}</td><td>{formatNumber(trade.result_r, 2)}R</td></tr>)}</tbody></table></div><div className="pagination"><span>Rows {formatInteger((page - 1) * pageSize + (analysis.trades.length ? 1 : 0))}–{formatInteger(Math.min(page * pageSize, analysis.trades.length))} of {formatInteger(analysis.trades.length)}</span><div><button disabled={page === 1} onClick={() => setPage((current) => current - 1)}>Previous</button><span>Page {formatInteger(page)} / {formatInteger(pageCount)}</span><button disabled={page === pageCount} onClick={() => setPage((current) => current + 1)}>Next</button></div></div></>;
+  return <><SectionHeading eyebrow="Trade ledger" title={`${formatInteger(allTrades.length)} completed positions`} detail={onSelectTrade ? "Select a row to inspect it on the candle chart" : undefined} /><div className="trade-toolbar"><label>Side<select value={side} onChange={(event) => setSide(event.target.value)}><option value="all">All sides</option><option value="long">Long</option><option value="short">Short</option></select></label><label>Exit reason<select value={reason} onChange={(event) => setReason(event.target.value)}><option value="all">All reasons</option>{reasons.map((item) => <option value={item} key={item}>{humanize(item)}</option>)}</select></label><label>Entry time<select value={sort} onChange={(event) => setSort(event.target.value as "asc" | "desc")}><option value="asc">Oldest first</option><option value="desc">Newest first</option></select></label></div><div className="table-wrap"><table className="trade-table"><thead><tr><th>#</th><th>Period</th><th>Side</th><th>Entry</th><th>Entry SL</th><th>Entry TP</th><th>Exit</th><th>Reason</th><th>Pips</th><th>Net P&amp;L</th><th>Result</th></tr></thead><tbody>{filtered.length === 0 ? <tr><td colSpan={11} className="empty-row">No trades match these filters.</td></tr> : visibleTrades.map(({ trade, period }) => <tr key={`${period}-${trade.trade_id}`} className={onSelectTrade ? "selectable-trade" : ""} tabIndex={onSelectTrade ? 0 : undefined} onClick={() => open(trade)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") open(trade); }}><td>{formatInteger(trade.trade_id)}</td><td><span className={`trade-period ${period.toLowerCase()}`}>{period}</span></td><td><span className={`side ${trade.direction}`}>{trade.direction}</span></td><td><strong>{formatNumber(trade.entry_price, 2)}</strong><small>{formatDateTime(trade.entry_time)}</small></td><td>{formatNumber(trade.initial_stop, 2)}</td><td>{formatNumber(trade.initial_target, 2)}</td><td><strong>{formatNumber(trade.exit_price, 2)}</strong><small>{formatDateTime(trade.exit_time)}</small></td><td><span className={`exit-reason ${exitReasonTone(trade.exit_reason)}`}>{humanize(trade.exit_reason)}</span></td><td className={trade.net_pnl >= 0 ? "positive" : "negative"}>{formatNumber(trade.net_pnl * 10, 1)} pips</td><td className={trade.net_pnl >= 0 ? "positive" : "negative"}>{money.format(trade.net_pnl)}</td><td>{formatNumber(trade.result_r, 2)}R</td></tr>)}</tbody></table></div><div className="pagination"><span>Rows {formatInteger((page - 1) * pageSize + (filtered.length ? 1 : 0))}–{formatInteger(Math.min(page * pageSize, filtered.length))} of {formatInteger(filtered.length)}</span><div><button disabled={page === 1} onClick={() => setPage((current) => current - 1)}>Previous</button><span>Page {formatInteger(page)} / {formatInteger(pageCount)}</span><button disabled={page === pageCount} onClick={() => setPage((current) => current + 1)}>Next</button></div></div></>;
 }
 
-function RiskRobustness({ analysis, analytics }: { analysis: BacktestResult; analytics: ReturnType<typeof analyzeTrades> }) {
+function RiskRobustness({ analysis, analytics }: { analysis: ResultPeriod; analytics: ReturnType<typeof analyzeTrades> }) {
   const metrics = analysis.metrics;
   return <><SectionHeading eyebrow="Risk diagnostics" title="Risk & robustness" detail="Deterministic resampling uses this run fingerprint as its seed" /><div className="risk-card-grid"><Diagnostic label="Maximum drawdown" value={money.format(metrics.max_drawdown)} detail={`${formatNumber(metrics.max_drawdown_percent, 2)}% · ${formatDuration(metrics.max_drawdown_duration_seconds)}`} /><Diagnostic label="Longest recovery" value={formatDuration(metrics.longest_recovery_seconds)} detail="trough to prior peak" /><Diagnostic label="Top 5 profit concentration" value={`${formatNumber(analytics.contribution.top5Percent, 1)}%`} detail={`Top 10: ${formatNumber(analytics.contribution.top10Percent, 1)}%`} /><Diagnostic label="Probability profitable" value={`${formatNumber(analytics.monteCarlo.profitableProbability, 1)}%`} detail="750 bootstrap paths" /><Diagnostic label="Expected drawdown range" value={`${formatNumber(analytics.monteCarlo.drawdownP10, 1)}–${formatNumber(analytics.monteCarlo.drawdownP90, 1)}R`} detail={`median ${formatNumber(analytics.monteCarlo.drawdownP50, 1)}R`} /><Diagnostic label="Likely losing streak" value={`${formatInteger(analytics.monteCarlo.streakP50)}–${formatInteger(analytics.monteCarlo.streakP90)}`} detail="median to 90th percentile" /></div><div className="robustness-grid"><RollingSummary analytics={analytics} /><ReturnHistogram bins={analytics.histogram} /><ContributionTable title="Best trade contribution" trades={analytics.contribution.best} /><ContributionTable title="Worst trade contribution" trades={analytics.contribution.worst} /><PeriodTable title="Performance by year" rows={analytics.years} /><ComparisonTable title="Performance by market regime" rows={analytics.regimes} /><CostSensitivity rows={analytics.costSensitivity} /></div></>;
 }
@@ -111,6 +126,7 @@ function DiagnosticTable({ title, subtitle, headers, rows }: { title: string; su
 function Metric({ label, value, detail, tone }: { label: string; value: string; detail: string; tone?: string }) { return <div className="metric"><span>{label}</span><strong className={tone}>{value}</strong><small>{detail}</small></div>; }
 function EmptyResult({ children }: { children: React.ReactNode }) { return <div className="result-empty">{children}</div>; }
 function humanize(value: string) { return value.replaceAll("_", " ").replace(/\b\w/g, (character) => character.toUpperCase()); }
+function exitReasonTone(value: string) { if (["stop", "stop_loss"].includes(value)) return "stop"; if (["target", "take_profit"].includes(value)) return "target"; if (["session_close", "time_exit", "end_of_data"].includes(value)) return "neutral"; return ""; }
 function formatRatio(value: number | null) { return value == null || !Number.isFinite(value) ? "—" : formatNumber(value, 2); }
 function formatDuration(seconds: number) { if (!seconds) return "0m"; const days = Math.floor(seconds / 86400); const hours = Math.floor(seconds % 86400 / 3600); const minutes = Math.floor(seconds % 3600 / 60); return days ? `${days}d ${hours}h` : hours ? `${hours}h ${minutes}m` : `${minutes}m`; }
 function signed(value: number) { return `${value >= 0 ? "+" : ""}${formatNumber(value, 2)}`; }

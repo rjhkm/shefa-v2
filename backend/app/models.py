@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -22,3 +23,8 @@ class AnalyzeRequest(BaseModel):
     slippage: float = Field(default=0.0, ge=0)
     commission_per_quantity_per_side: float = Field(default=0.0, ge=0)
     source_timezone: str | None = None
+    backtest_start_time: datetime | None = None
+    backtest_end_time: datetime | None = None
+    forward_enabled: bool = False
+    forward_start_time: datetime | None = None
+    forward_end_time: datetime | None = None

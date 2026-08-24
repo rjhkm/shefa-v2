@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from .backtest import add_market_regimes, calculate_metrics, run_backtest
@@ -32,6 +33,18 @@ def health() -> dict:
 @app.get("/api/catalog")
 def catalog() -> dict:
     return {"datasets": repository.catalog()}
+
+
+@app.get("/api/dataset-range")
+def dataset_range(pair: str, timeframe: str, source_timezone: str | None = None) -> dict:
+    try:
+        frame, _ = repository.load(pair, timeframe, source_timezone)
+    except CandleDataError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    return {
+        "start_time": frame.iloc[0]["timestamp"].isoformat(),
+        "end_time": frame.iloc[-1]["timestamp"].isoformat(),
+    }
 
 
 @app.get("/api/strategies")
@@ -70,7 +83,7 @@ def saved_run(run_id: str) -> dict:
     try:
         strategy, frame = _saved_frame(record)
         metric_equity = list(record.get("equity", []))
-        if len(frame) and metric_equity:
+        if len(frame) and metric_equity and not record.get("forward_test"):
             frame_end = frame.iloc[-1]["timestamp"].isoformat()
             if metric_equity[-1]["time"] != frame_end:
                 metric_equity.append({"time": frame_end, "value": metric_equity[-1]["value"]})
@@ -126,9 +139,12 @@ def analyze(request: AnalyzeRequest) -> dict:
             request.pair, request.timeframe, request.source_timezone
         )
         params = strategy.parameters(request.parameters)
-        frame = strategy.calculate(candles, params)
+        calculated_frame = strategy.calculate(candles, params)
+        frame = _date_slice(
+            calculated_frame, request.backtest_start_time, request.backtest_end_time, "Backtest"
+        )
         config = {
-            **request.model_dump(),
+            **request.model_dump(mode="json"),
             "strategy_id": strategy.id,
             "strategy_key": strategy.key,
             "dataset_hash": metadata["dataset_hash"],
@@ -136,10 +152,32 @@ def analyze(request: AnalyzeRequest) -> dict:
             "strategy_diagnostic_schema": strategy.diagnostic_schema(),
         }
         result = run_backtest(frame, params, config)
+        forward_result = None
+        forward_frame = None
+        if request.forward_enabled:
+            if request.forward_start_time is None or request.forward_end_time is None:
+                raise ValueError("Forward-test start and end times are required when forward testing is enabled")
+            forward_frame = _date_slice(
+                calculated_frame, request.forward_start_time, request.forward_end_time, "Forward test"
+            )
+            if forward_frame.iloc[0]["timestamp"] <= frame.iloc[-1]["timestamp"]:
+                raise ValueError("Forward testing must start after the main backtest ends")
+            forward_capital = float(result["equity"][-1]["value"] if result["equity"] else request.initial_capital)
+            forward_config = {
+                **config,
+                "initial_capital": forward_capital,
+                "test_period": "forward",
+            }
+            forward_result = run_backtest(forward_frame, params, forward_config)
+            for trade in forward_result["trades"]:
+                trade["trade_id"] += len(result["trades"])
     except (CandleDataError, ValueError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
-    chart = chart_payload(frame, strategy)
+    chart_frame = pd.concat([frame, forward_frame], ignore_index=True) if forward_frame is not None else frame
+    chart = chart_payload(chart_frame, strategy)
+    metadata["source_row_count"] = metadata["row_count"]
+    metadata["row_count"] = len(chart_frame)
     metadata["rendered_row_count"] = len(chart["candles"])
     response = {
         "dataset": metadata,
@@ -154,6 +192,13 @@ def analyze(request: AnalyzeRequest) -> dict:
         **chart,
         **result,
     }
+    if forward_result is not None:
+        response["forward_test"] = {
+            **forward_result,
+            "strategy": response["strategy"],
+            "start_time": forward_frame.iloc[0]["timestamp"].isoformat(),
+            "end_time": forward_frame.iloc[-1]["timestamp"].isoformat(),
+        }
     response["saved_run_id"] = run_store.save(
         {
             "fingerprint": result["fingerprint"],
@@ -161,12 +206,12 @@ def analyze(request: AnalyzeRequest) -> dict:
             "pair": request.pair,
             "timeframe": request.timeframe,
             "run_start_time": frame.iloc[0]["timestamp"].isoformat() if len(frame) else None,
-            "run_end_time": frame.iloc[-1]["timestamp"].isoformat() if len(frame) else None,
+            "run_end_time": chart_frame.iloc[-1]["timestamp"].isoformat() if len(chart_frame) else None,
             "dataset": metadata,
             "strategy": response["strategy"],
             "execution": {
                 key: value
-                for key, value in request.model_dump().items()
+                for key, value in request.model_dump(mode="json").items()
                 if key not in {"pair", "timeframe", "strategy_key", "strategy_id", "parameters"}
             },
             "metrics": result["metrics"],
@@ -174,6 +219,7 @@ def analyze(request: AnalyzeRequest) -> dict:
             "trades": result["trades"],
             "equity": result["equity"],
             "drawdown": result["drawdown"],
+            "forward_test": response.get("forward_test"),
         }
     )
     return response
@@ -237,4 +283,44 @@ def _saved_frame(record: dict):
     saved_hash = record.get("dataset", {}).get("dataset_hash")
     if saved_hash and metadata["dataset_hash"] != saved_hash:
         raise ValueError("The source candle file has changed since this backtest was saved")
-    return strategy, strategy.calculate(candles, strategy_record["parameters"])
+    calculated = strategy.calculate(candles, strategy_record["parameters"])
+    execution = record.get("execution", {})
+    main_frame = _date_slice(
+        calculated,
+        execution.get("backtest_start_time"),
+        execution.get("backtest_end_time"),
+        "Backtest",
+    )
+    if execution.get("forward_enabled"):
+        forward_frame = _date_slice(
+            calculated,
+            execution.get("forward_start_time"),
+            execution.get("forward_end_time"),
+            "Forward test",
+        )
+        main_frame = pd.concat([main_frame, forward_frame], ignore_index=True)
+    return strategy, main_frame
+
+
+def _date_slice(frame, start, end, label: str):
+    if start is None and end is None:
+        selected = frame.copy()
+    else:
+        start_time = pd.Timestamp(start) if start is not None else frame.iloc[0]["timestamp"]
+        end_time = pd.Timestamp(end) if end is not None else frame.iloc[-1]["timestamp"]
+        if start_time.tzinfo is None:
+            start_time = start_time.tz_localize("UTC")
+        else:
+            start_time = start_time.tz_convert("UTC")
+        if end_time.tzinfo is None:
+            end_time = end_time.tz_localize("UTC")
+        else:
+            end_time = end_time.tz_convert("UTC")
+        if start_time > end_time:
+            raise ValueError(f"{label} start time must be before its end time")
+        selected = frame.loc[
+            (frame["timestamp"] >= start_time) & (frame["timestamp"] <= end_time)
+        ].copy()
+    if selected.empty:
+        raise ValueError(f"{label} range contains no candles")
+    return selected.reset_index(drop=True)

@@ -3,7 +3,7 @@ import { Activity, AlertTriangle, BarChart3, ChevronDown, CircleDot, Database, M
 import { api } from "./api";
 import StrategyChart from "./components/Chart";
 import Results from "./components/Results";
-import { formatInteger } from "./format";
+import { formatDateRange, formatInteger } from "./format";
 import StrategyControls from "./components/StrategyControls";
 import { HomePage, NotFoundPage, PastBacktestsPage, SavedBacktestPage } from "./pages";
 import { compatibleTimeframes, preferredTimeframe } from "./strategyTimeframe";
@@ -53,6 +53,9 @@ function BacktestLab({ theme, toggleTheme, navigate }: { theme: Theme; toggleThe
   const [stale, setStale] = useState(false);
   const [error, setError] = useState("");
   const [sourceTimezone, setSourceTimezone] = useState("");
+  const [dateRanges, setDateRanges] = useState({
+    backtestStart: "", backtestEnd: "", forwardEnabled: false, forwardStart: "", forwardEnd: "",
+  });
   const [appearance, setAppearance] = useState<ChartAppearance>({
     indicators: {},
     trades: { visible: true, buyColor: "#22a978", sellColor: "#e0524d", opacity: 100 },
@@ -103,6 +106,19 @@ function BacktestLab({ theme, toggleTheme, navigate }: { theme: Theme; toggleThe
     }));
   }, [strategy]);
 
+  useEffect(() => {
+    if (!pair || !timeframe) return;
+    let cancelled = false;
+    api.datasetRange(pair, timeframe).then((range) => {
+      if (cancelled) return;
+      const start = toDateTimeInput(range.start_time);
+      const end = toDateTimeInput(range.end_time);
+      const split = toDateTimeInput(new Date(Date.parse(range.start_time) + (Date.parse(range.end_time) - Date.parse(range.start_time)) * .8).toISOString());
+      setDateRanges({ backtestStart: start, backtestEnd: end, forwardEnabled: false, forwardStart: split, forwardEnd: end });
+    }).catch((reason) => { if (!cancelled) setError(reason.message); });
+    return () => { cancelled = true; };
+  }, [pair, timeframe]);
+
   const selectPair = (value: string) => {
     setPair(value);
     setTimeframe(preferredTimeframe(strategy, catalog[value] || []));
@@ -131,6 +147,11 @@ function BacktestLab({ theme, toggleTheme, navigate }: { theme: Theme; toggleThe
         slippage: execution.slippage,
         commission_per_quantity_per_side: execution.commission_per_quantity_per_side,
         source_timezone: sourceTimezone || null,
+        backtest_start_time: dateRanges.backtestStart || null,
+        backtest_end_time: dateRanges.backtestEnd || null,
+        forward_enabled: dateRanges.forwardEnabled,
+        forward_start_time: dateRanges.forwardEnabled ? dateRanges.forwardStart : null,
+        forward_end_time: dateRanges.forwardEnabled ? dateRanges.forwardEnd : null,
       });
       setAnalysis(result);
       setFocusedTradeId(null);
@@ -169,6 +190,16 @@ function BacktestLab({ theme, toggleTheme, navigate }: { theme: Theme; toggleThe
           <div className="sidebar-title"><span><Settings2 size={15} /> Parameters</span><small>v{strategy?.version || "—"}</small></div>
           {strategy?.version_notes && <div className="version-notes"><strong>Version notes</strong><p>{strategy.version_notes}</p></div>}
           {strategy && <StrategyControls strategy={strategy} values={parameters} onChange={(key, value) => { setParameters((current) => ({ ...current, [key]: value })); setStale(Boolean(analysis)); }} />}
+          <section className="control-group date-range-controls">
+            <h3>Date ranges · UTC</h3>
+            <DateTimeRange label="Main backtest" start={dateRanges.backtestStart} end={dateRanges.backtestEnd} onChange={(start, end) => updateDateRange({ backtestStart: start, backtestEnd: end })} />
+            <label className="toggle-row forward-toggle"><span>Forward testing</span><input type="checkbox" checked={dateRanges.forwardEnabled} onChange={(event) => {
+              const enabled = event.target.checked;
+              setDateRanges((current) => ({ ...current, forwardEnabled: enabled, backtestEnd: enabled && current.forwardStart && current.backtestEnd >= current.forwardStart ? oneSecondBefore(current.forwardStart) : current.backtestEnd }));
+              setStale(Boolean(analysis));
+            }} /></label>
+            {dateRanges.forwardEnabled && <DateTimeRange label="Forward test" start={dateRanges.forwardStart} end={dateRanges.forwardEnd} onChange={(start, end) => updateDateRange({ forwardStart: start, forwardEnd: end })} />}
+          </section>
           <section className="control-group">
             <h3>Execution</h3>
             <ExecutionField label="Initial capital" value={execution.initial_capital} step={100} onChange={(value) => setExecutionValue("initial_capital", value)} />
@@ -187,7 +218,7 @@ function BacktestLab({ theme, toggleTheme, navigate }: { theme: Theme; toggleThe
 
         <section className="main-panel">
           <div className="context-bar">
-            <div><span className="live-dot" /><strong>{pair || "NO DATA"}</strong><span>{timeframe || "—"}</span><span>{strategy?.name}</span></div>
+            <div><span className="live-dot" /><strong>{pair || "NO DATA"}</strong><span>{timeframe || "—"}</span><span>{strategy?.name}</span>{dateRanges.backtestStart && dateRanges.backtestEnd && <span>{formatDateRange(dateRanges.backtestStart, dateRanges.forwardEnabled ? dateRanges.forwardEnd : dateRanges.backtestEnd)}</span>}</div>
             <div>{stale && <span className="stale"><CircleDot size={12} /> Settings changed — rerun</span>}<span>{sourceTimezone || "UTC · unconfirmed"}</span></div>
           </div>
           {error && <div className="notice error"><AlertTriangle size={16} /><span>{error}</span></div>}
@@ -204,7 +235,7 @@ function BacktestLab({ theme, toggleTheme, navigate }: { theme: Theme; toggleThe
               {analysis.dataset.warnings.map((warning) => <div className="notice" key={warning}><AlertTriangle size={15} /><span>{warning}</span></div>)}
               <div className={stale ? "chart-shell stale-data" : "chart-shell"}>
                 <div className="chart-label"><span>{analysis.dataset.file_name}</span><span>{focusedChart ? `${formatInteger(focusedChart.candles.length)} candles · focused trade` : `${formatInteger(analysis.dataset.row_count)} tested · ${formatInteger(analysis.dataset.rendered_row_count)} rendered`}</span></div>
-                <StrategyChart analysis={focusedChart ? { ...analysis, ...focusedChart } : analysis} appearance={appearance} theme={theme} focusTradeId={focusedTradeId} />
+                <StrategyChart analysis={{ ...(focusedChart ? { ...analysis, ...focusedChart } : analysis), trades: [...analysis.trades, ...(analysis.forward_test?.trades || [])] }} appearance={appearance} theme={theme} focusTradeId={focusedTradeId} />
               </div>
               <Results analysis={analysis} initialCapital={execution.initial_capital} onSelectTrade={focusTrade} />
             </>
@@ -224,6 +255,11 @@ function BacktestLab({ theme, toggleTheme, navigate }: { theme: Theme; toggleThe
 
   function setExecutionValue(key: keyof typeof execution, value: number) {
     setExecution((current) => ({ ...current, [key]: value }));
+    setStale(Boolean(analysis));
+  }
+
+  function updateDateRange(change: Partial<typeof dateRanges>) {
+    setDateRanges((current) => ({ ...current, ...change }));
     setStale(Boolean(analysis));
   }
 
@@ -261,3 +297,10 @@ function Selector({ label, icon, value, options, onChange, render = (value: stri
 function ExecutionField({ label, value, step, onChange }: { label: string; value: number; step: number; onChange: (value: number) => void }) {
   return <label className="field"><span>{label}</span><input type="number" min={0} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
 }
+
+function DateTimeRange({ label, start, end, onChange }: { label: string; start: string; end: string; onChange: (start: string, end: string) => void }) {
+  return <fieldset className="date-time-range"><legend>{label}</legend><label><span>From</span><input type="datetime-local" step="1" value={start} onChange={(event) => onChange(event.target.value, end)} /></label><label><span>To</span><input type="datetime-local" step="1" value={end} onChange={(event) => onChange(start, event.target.value)} /></label></fieldset>;
+}
+
+function toDateTimeInput(value: string) { return new Date(value).toISOString().slice(0, 19); }
+function oneSecondBefore(value: string) { return new Date(Date.parse(`${value}Z`) - 1000).toISOString().slice(0, 19); }

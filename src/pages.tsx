@@ -4,7 +4,7 @@ import { api } from "./api";
 import AppearancePanel, { appearanceForPlots } from "./components/AppearancePanel";
 import StrategyChart from "./components/Chart";
 import Results from "./components/Results";
-import { formatDate, formatDateTime, formatInteger, formatNumber, money } from "./format";
+import { formatDateRange, formatDateTime, formatInteger, formatNumber, money } from "./format";
 import type { ChartPayload, RunSummary, SavedRun, Trade, TradeLabelMode } from "./types";
 
 type PageProps = { navigate: (path: string) => void; theme: "dark" | "light"; toggleTheme: () => void };
@@ -73,7 +73,7 @@ export function SavedBacktestPage({ runId, ...props }: PageProps & { runId: stri
 
 function SavedResultWorkspace({ run, theme, chartError, focusTradeId, focusedChart, onSelectTrade }: { run: SavedRun; theme: "dark" | "light"; chartError: string; focusTradeId: number | null; focusedChart: ChartPayload | null; onSelectTrade: (trade: Trade) => void }) {
   const [appearance, setAppearance] = useState(() => appearanceForPlots(run.plot_schema));
-  const [labelMode, setLabelMode] = useState<TradeLabelMode>("cash");
+  const [labelMode, setLabelMode] = useState<TradeLabelMode>("pips");
   const [panelOpen, setPanelOpen] = useState(true);
   useEffect(() => setAppearance(appearanceForPlots(run.plot_schema)), [run.run_id, run.plot_schema]);
   const initialCapital = numericValue(run.execution.initial_capital, 10_000);
@@ -94,14 +94,14 @@ function SavedResultWorkspace({ run, theme, chartError, focusTradeId, focusedCha
           {run.strategy.version_notes && <div className="version-notes"><strong>Version notes</strong><p>{run.strategy.version_notes}</p></div>}
           <ReadOnlyFields title="Strategy" values={run.strategy.parameters} />
           <ReadOnlyFields title="Execution" values={run.execution} />
-          <section className="control-group"><h3>Chart display</h3><label className="field"><span>Exit P&amp;L</span><select id="pnl-label-mode" value={labelMode} onChange={(event) => setLabelMode(event.target.value as TradeLabelMode)}><option value="cash">P&amp;L $</option><option value="percent">P&amp;L %</option><option value="pips"># Pips</option></select></label>{labelMode === "pips" && <small className="readonly-hint">1 pip = {formatNumber(pipSize, 4, 0)} price units</small>}</section>
+          <section className="control-group"><h3>Chart display</h3><label className="field"><span>Exit P&amp;L</span><select id="pnl-label-mode" value={labelMode} onChange={(event) => setLabelMode(event.target.value as TradeLabelMode)}><option value="cash">P&amp;L $</option><option value="percent">P&amp;L %</option><option value="pips"># Pips</option></select></label>{labelMode === "pips" && <small className="readonly-hint">$1 = 10 pips</small>}</section>
           <section className="control-group appearance-group"><h3><Palette size={11} /> Appearance</h3><AppearancePanel plots={run.plot_schema} appearance={appearance} onChange={setAppearance} /></section>
         </>}
       </aside>
       <section className="main-panel">
         <div className="context-bar"><div><span className="live-dot" /><strong>RUN {run.run_id.toUpperCase()}</strong><span>{formatRange(run.run_start_time || null, run.run_end_time || null)}</span></div><div><span>{run.dataset.source_timezone || "UTC · unconfirmed"}</span></div></div>
         {chartError && <div className="notice error">{chartError}</div>}
-        {run.chart_warning || !run.candles.length ? <div className="notice chart-warning">Candle chart unavailable: {run.chart_warning || "no candle data was returned"}.</div> : <div className="chart-shell saved-workspace-chart"><div className="chart-label"><span>{run.dataset.file_name}</span><span>{focusedChart ? `${formatInteger(focusedChart.candles.length)} candles · focused trade` : `${formatInteger(run.dataset.rendered_row_count)} candles · ${formatInteger(run.trades.length)} trades`}</span></div><StrategyChart analysis={focusedChart ? { ...run, ...focusedChart } : run} appearance={appearance} theme={theme} tradeLabelMode={labelMode} initialCapital={initialCapital} pipSize={pipSize} focusTradeId={focusTradeId} /></div>}
+        {run.chart_warning || !run.candles.length ? <div className="notice chart-warning">Candle chart unavailable: {run.chart_warning || "no candle data was returned"}.</div> : <div className="chart-shell saved-workspace-chart"><div className="chart-label"><span>{run.dataset.file_name}</span><span>{focusedChart ? `${formatInteger(focusedChart.candles.length)} candles · focused trade` : `${formatInteger(run.dataset.rendered_row_count)} candles · ${formatInteger(run.trades.length + (run.forward_test?.trades.length || 0))} trades`}</span></div><StrategyChart analysis={{ ...(focusedChart ? { ...run, ...focusedChart } : run), trades: [...run.trades, ...(run.forward_test?.trades || [])] }} appearance={appearance} theme={theme} tradeLabelMode={labelMode} initialCapital={initialCapital} pipSize={pipSize} focusTradeId={focusTradeId} /></div>}
         <Results analysis={{ ...run, saved_run_id: run.run_id }} initialCapital={initialCapital} onSelectTrade={onSelectTrade} />
       </section>
     </div>
@@ -121,7 +121,7 @@ export function PageHeader({ navigate, theme, toggleTheme }: PageProps) {
 
 function PageLoading({ label }: { label: string }) { return <div className="page-loading"><Activity className="spin" /> {label}</div>; }
 function formatDays(days: number | null) { return days == null ? "—" : `${formatNumber(days, days < 1 ? 2 : 1)} days`; }
-function formatRange(start: string | null, end: string | null) { return start && end ? `${formatDate(start)} – ${formatDate(end)}` : "Range unavailable"; }
+function formatRange(start: string | null, end: string | null) { return start && end ? formatDateRange(start, end) : "Range unavailable"; }
 function numericValue(value: unknown, fallback: number) { return typeof value === "number" && Number.isFinite(value) ? value : fallback; }
 function chartContainsTrade(candles: SavedRun["candles"], trade: Trade) { return Boolean(candles.length && Date.parse(trade.entry_time) >= Date.parse(candles[0].time) && Date.parse(trade.exit_time) <= Date.parse(candles.at(-1)!.time)); }
 function parameterLabel(key: string) { return key.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase()).replace("Atr", "ATR"); }

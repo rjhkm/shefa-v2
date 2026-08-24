@@ -124,7 +124,7 @@ export type BacktestMetrics = {
     total_costs: number;
 };
 
-export type BacktestResult = {
+export type ResultPeriod = {
   strategy: { name: string; version: string };
   trades: Trade[];
   metrics: BacktestMetrics;
@@ -132,8 +132,14 @@ export type BacktestResult = {
   equity: ValuePoint[];
   drawdown: ValuePoint[];
   fingerprint: string;
-  saved_run_id: string;
   candles?: Candle[];
+  start_time?: string;
+  end_time?: string;
+};
+
+export type BacktestResult = ResultPeriod & {
+  saved_run_id: string;
+  forward_test?: ResultPeriod | null;
 };
 
 export type Analysis = BacktestResult & {
