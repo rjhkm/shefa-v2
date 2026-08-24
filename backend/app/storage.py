@@ -28,6 +28,16 @@ class RunStore:
         for path in self.root.glob("*.json"):
             try:
                 record = json.loads(path.read_text(encoding="utf-8"))
+                equity = record.get("equity", [])
+                run_start = record.get("run_start_time") or (equity[0]["time"] if equity else None)
+                run_end = record.get("run_end_time") or (equity[-1]["time"] if equity else None)
+                run_days = None
+                if run_start and run_end:
+                    run_days = max(
+                        0.0,
+                        (datetime.fromisoformat(run_end) - datetime.fromisoformat(run_start)).total_seconds()
+                        / 86_400,
+                    )
                 summaries.append(
                     {
                         "run_id": record["run_id"],
@@ -35,6 +45,12 @@ class RunStore:
                         "pair": record["pair"],
                         "timeframe": record["timeframe"],
                         "strategy_name": record["strategy"]["name"],
+                        "strategy_version": record["strategy"]["version"],
+                        "run_start_time": run_start,
+                        "run_end_time": run_end,
+                        "run_days": run_days,
+                        "equity_change": record["metrics"]["net_profit"],
+                        "equity_change_percent": record["metrics"]["return_percent"],
                         "metrics": record["metrics"],
                     }
                 )

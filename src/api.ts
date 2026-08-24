@@ -1,4 +1,4 @@
-import type { Analysis, StrategySchema } from "./types";
+import type { Analysis, ChartPayload, RunSummary, SavedRun, StrategySchema } from "./types";
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(url, options);
@@ -10,6 +10,9 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 export const api = {
   catalog: () => request<{ datasets: Record<string, string[]> }>("/api/catalog"),
   strategies: () => request<{ strategies: StrategySchema[] }>("/api/strategies"),
+  runs: () => request<{ runs: RunSummary[] }>("/api/runs"),
+  run: (runId: string) => request<SavedRun>(`/api/runs/${encodeURIComponent(runId)}`),
+  runChart: (runId: string, startTime: string, endTime: string) => request<ChartPayload>(`/api/runs/${encodeURIComponent(runId)}/chart?start_time=${encodeURIComponent(startTime)}&end_time=${encodeURIComponent(endTime)}`),
   analyze: (body: Record<string, unknown>) =>
     request<Analysis>("/api/analyze", {
       method: "POST",

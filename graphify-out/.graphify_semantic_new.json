@@ -1,0 +1,820 @@
+{
+  "nodes": [
+    {
+      "id": "readme_shefa_strategy_lab_mvp",
+      "label": "Shefa Strategy Lab MVP",
+      "file_type": "document",
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 1-78",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_python_source_of_truth",
+      "label": "Python Trading Logic Source of Truth",
+      "file_type": "rationale",
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 3-3",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_candle_file_contract",
+      "label": "Candle File Contract",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 23-40",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_completed_candle_execution",
+      "label": "Completed-Candle Execution",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 50-59",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_conservative_intrabar_collision",
+      "label": "Conservative Intrabar Collision Policy",
+      "file_type": "rationale",
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 54-54",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_strategy_plugin_framework",
+      "label": "Strategy Plug-in Framework",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 70-72",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "readme_deterministic_saved_runs",
+      "label": "Deterministic Saved Runs",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 74-78",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "data_candles_readme_candle_files",
+      "label": "Candle Files",
+      "file_type": "document",
+      "source_file": "/Users/reuben.hukom/shefa-v2/data/candles/README.md",
+      "source_location": "lines 1-9",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "data_candles_readme_filename_timeframe_convention",
+      "label": "Filename and Timeframe Convention",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/data/candles/README.md",
+      "source_location": "lines 3-7",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "data_candles_readme_utc_timestamp_assumption",
+      "label": "UTC Timestamp Assumption",
+      "file_type": "rationale",
+      "source_file": "/Users/reuben.hukom/shefa-v2/data/candles/README.md",
+      "source_location": "lines 9-9",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "index_shefa_strategy_lab_shell",
+      "label": "Shefa Strategy Lab HTML Shell",
+      "file_type": "code",
+      "source_file": "/Users/reuben.hukom/shefa-v2/index.html",
+      "source_location": "lines 1-13",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "index_root_mount_point",
+      "label": "React Root Mount Point",
+      "file_type": "code",
+      "source_file": "/Users/reuben.hukom/shefa-v2/index.html",
+      "source_location": "lines 9-10",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "requirements_python_runtime_dependencies",
+      "label": "Python Runtime and Test Dependencies",
+      "file_type": "document",
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "lines 1-7",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "requirements_fastapi",
+      "label": "FastAPI",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 1",
+      "source_url": "https://fastapi.tiangolo.com/",
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "requirements_pandas",
+      "label": "pandas",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 3",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "requirements_numpy",
+      "label": "NumPy",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 4",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "requirements_pydantic",
+      "label": "Pydantic",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 5",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "requirements_pytest",
+      "label": "pytest",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 6",
+      "source_url": null,
+      "captured_at": null,
+      "author": null,
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_product_requirements",
+      "label": "XAUUSD Strategy Lab Product Requirements v1.0",
+      "file_type": "paper",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 1-15",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_reusable_local_strategy_lab",
+      "label": "Reusable Local Strategy Lab",
+      "file_type": "rationale",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 1-2",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_execution_correctness_priority",
+      "label": "Execution Correctness Priority",
+      "file_type": "rationale",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 2",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_dataset_validation",
+      "label": "Dataset Import and Validation",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 4",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_canonical_candle_contract",
+      "label": "Canonical Candle Contract",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 4",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_timeframe_aggregation",
+      "label": "Timeframe Aggregation",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 4",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_strategy_interface",
+      "label": "Required Strategy Interface",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 6",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_bollinger_awesome_v1",
+      "label": "Bollinger Awesome v1",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 6-7",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "label": "Contractual Backtesting Semantics",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 8",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_cost_model",
+      "label": "Adverse Cost Model",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 8",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_risk_based_position_sizing",
+      "label": "Risk-Based Position Sizing",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 8",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_run_fingerprint_versioning",
+      "label": "Run Fingerprint and Versioning",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 8",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_results_analysis",
+      "label": "Results and Analysis Contract",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 9-10",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_python_authoritative_architecture",
+      "label": "Python-Authoritative Technical Architecture",
+      "file_type": "rationale",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 10",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_mandatory_engine_tests",
+      "label": "Mandatory Engine Tests",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 13",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_milestone_plan",
+      "label": "Milestone Implementation Plan",
+      "file_type": "concept",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 14",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    },
+    {
+      "id": "xauusd_strategy_lab_prd_v1_0_ai_analysis_boundary",
+      "label": "Optional AI Analysis Boundary",
+      "file_type": "rationale",
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 2 and 15",
+      "source_url": null,
+      "captured_at": "2026-08-23",
+      "author": "OpenAI Codex",
+      "contributor": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "readme_shefa_strategy_lab_mvp",
+      "target": "readme_python_source_of_truth",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "line 3",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_shefa_strategy_lab_mvp",
+      "target": "readme_candle_file_contract",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 23-46",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_shefa_strategy_lab_mvp",
+      "target": "readme_completed_candle_execution",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 48-59",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_completed_candle_execution",
+      "target": "readme_conservative_intrabar_collision",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 50-55",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_shefa_strategy_lab_mvp",
+      "target": "readme_strategy_plugin_framework",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 70-72",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_shefa_strategy_lab_mvp",
+      "target": "readme_deterministic_saved_runs",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 74-78",
+      "weight": 1.0
+    },
+    {
+      "source": "data_candles_readme_candle_files",
+      "target": "data_candles_readme_filename_timeframe_convention",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/data/candles/README.md",
+      "source_location": "lines 3-7",
+      "weight": 1.0
+    },
+    {
+      "source": "data_candles_readme_candle_files",
+      "target": "data_candles_readme_utc_timestamp_assumption",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/data/candles/README.md",
+      "source_location": "line 9",
+      "weight": 1.0
+    },
+    {
+      "source": "data_candles_readme_candle_files",
+      "target": "readme_candle_file_contract",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/data/candles/README.md",
+      "source_location": "lines 1-9",
+      "weight": 1.0
+    },
+    {
+      "source": "index_shefa_strategy_lab_shell",
+      "target": "index_root_mount_point",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/index.html",
+      "source_location": "lines 9-10",
+      "weight": 1.0
+    },
+    {
+      "source": "index_shefa_strategy_lab_shell",
+      "target": "readme_shefa_strategy_lab_mvp",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/Users/reuben.hukom/shefa-v2/index.html",
+      "source_location": "lines 7-10",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_python_runtime_dependencies",
+      "target": "requirements_fastapi",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 1",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_python_runtime_dependencies",
+      "target": "requirements_pandas",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 3",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_python_runtime_dependencies",
+      "target": "requirements_numpy",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 4",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_python_runtime_dependencies",
+      "target": "requirements_pydantic",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 5",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_python_runtime_dependencies",
+      "target": "requirements_pytest",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 6",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_product_requirements",
+      "target": "xauusd_strategy_lab_prd_v1_0_reusable_local_strategy_lab",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 1-2",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_execution_correctness_priority",
+      "target": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 2 and 8",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_dataset_validation",
+      "target": "xauusd_strategy_lab_prd_v1_0_canonical_candle_contract",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 4",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_canonical_candle_contract",
+      "target": "xauusd_strategy_lab_prd_v1_0_timeframe_aggregation",
+      "relation": "shares_data_with",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 4",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_bollinger_awesome_v1",
+      "target": "xauusd_strategy_lab_prd_v1_0_strategy_interface",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 6",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_strategy_interface",
+      "target": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "relation": "conceptually_related_to",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 6 and 8",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "target": "xauusd_strategy_lab_prd_v1_0_cost_model",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 8",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "target": "xauusd_strategy_lab_prd_v1_0_risk_based_position_sizing",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 8",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "target": "xauusd_strategy_lab_prd_v1_0_run_fingerprint_versioning",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 8",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "target": "xauusd_strategy_lab_prd_v1_0_results_analysis",
+      "relation": "shares_data_with",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 8-10",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_python_authoritative_architecture",
+      "target": "xauusd_strategy_lab_prd_v1_0_strategy_interface",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 6 and 10",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_mandatory_engine_tests",
+      "target": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "relation": "implements",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 13",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_milestone_plan",
+      "target": "xauusd_strategy_lab_prd_v1_0_mandatory_engine_tests",
+      "relation": "references",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "page 14",
+      "weight": 1.0
+    },
+    {
+      "source": "xauusd_strategy_lab_prd_v1_0_ai_analysis_boundary",
+      "target": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "source_location": "pages 2 and 15",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_python_source_of_truth",
+      "target": "xauusd_strategy_lab_prd_v1_0_python_authoritative_architecture",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "line 3",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_completed_candle_execution",
+      "target": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 50-59",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_conservative_intrabar_collision",
+      "target": "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "line 54",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_strategy_plugin_framework",
+      "target": "xauusd_strategy_lab_prd_v1_0_strategy_interface",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 70-72",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_deterministic_saved_runs",
+      "target": "xauusd_strategy_lab_prd_v1_0_run_fingerprint_versioning",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 74-78",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_candle_file_contract",
+      "target": "xauusd_strategy_lab_prd_v1_0_canonical_candle_contract",
+      "relation": "semantically_similar_to",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/README.md",
+      "source_location": "lines 23-40",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_fastapi",
+      "target": "xauusd_strategy_lab_prd_v1_0_python_authoritative_architecture",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 1",
+      "weight": 1.0
+    },
+    {
+      "source": "requirements_pytest",
+      "target": "xauusd_strategy_lab_prd_v1_0_mandatory_engine_tests",
+      "relation": "implements",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/Users/reuben.hukom/shefa-v2/requirements.txt",
+      "source_location": "line 6",
+      "weight": 1.0
+    }
+  ],
+  "hyperedges": [
+    {
+      "id": "deterministic_execution_contract",
+      "label": "Deterministic Execution Contract",
+      "nodes": [
+        "readme_completed_candle_execution",
+        "readme_conservative_intrabar_collision",
+        "readme_deterministic_saved_runs",
+        "xauusd_strategy_lab_prd_v1_0_backtesting_semantics",
+        "xauusd_strategy_lab_prd_v1_0_run_fingerprint_versioning"
+      ],
+      "relation": "form",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf"
+    },
+    {
+      "id": "shared_strategy_lab_architecture",
+      "label": "Shared Strategy Lab Architecture",
+      "nodes": [
+        "index_shefa_strategy_lab_shell",
+        "requirements_fastapi",
+        "readme_strategy_plugin_framework",
+        "xauusd_strategy_lab_prd_v1_0_reusable_local_strategy_lab",
+        "xauusd_strategy_lab_prd_v1_0_python_authoritative_architecture"
+      ],
+      "relation": "implement",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf"
+    },
+    {
+      "id": "candle_data_contract_flow",
+      "label": "Candle Data Contract Flow",
+      "nodes": [
+        "data_candles_readme_candle_files",
+        "readme_candle_file_contract",
+        "xauusd_strategy_lab_prd_v1_0_dataset_validation",
+        "xauusd_strategy_lab_prd_v1_0_canonical_candle_contract",
+        "xauusd_strategy_lab_prd_v1_0_timeframe_aggregation"
+      ],
+      "relation": "participate_in",
+      "confidence": "INFERRED",
+      "confidence_score": 0.95,
+      "source_file": "/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

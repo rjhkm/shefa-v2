@@ -9,6 +9,7 @@ class AnalyzeRequest(BaseModel):
     pair: str
     timeframe: str
     strategy_key: str = "bollinger_awesome"
+    strategy_id: str | None = None
     parameters: dict[str, Any] = Field(default_factory=dict)
     initial_capital: float = Field(default=10_000, gt=0)
     sizing_mode: Literal["risk", "fixed"] = "risk"

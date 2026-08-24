@@ -1,0 +1,5 @@
+/Users/reuben.hukom/shefa-v2/README.md
+/Users/reuben.hukom/shefa-v2/data/candles/README.md
+/Users/reuben.hukom/shefa-v2/index.html
+/Users/reuben.hukom/shefa-v2/requirements.txt
+/Users/reuben.hukom/shefa-v2/XAUUSD-Strategy-Lab-PRD-v1.0.pdf

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "bollinger_awesome@1.3.0",
+    "strategy_name": "Bollinger Awesome Alert R1.1",
+    "version": "1.3.0",
+    "file_dir": "backend/app/strategies/bollinger_awesome.py",
+    "version_notes": "Baseline Bollinger Band and Awesome Oscillator strategy."
+  },
+  {
+    "id": "bollinger_three_touch@1.0.0",
+    "strategy_name": "Bollinger Three-Touch Reversal",
+    "version": "1.0.0",
+    "file_dir": "backend/app/strategies/bollinger_three_touch.py",
+    "version_notes": "Three-touch Bollinger reversal variant with structural confirmation."
+  },
+  {
+    "id": "h1_m5_pullback_reclaim@1.0.0",
+    "strategy_name": "H1 Trend + M5 Pullback Reclaim",
+    "version": "1.0.0",
+    "file_dir": "backend/app/strategies/H1 Trend + M5 Pullback Reclaim [1.0.0].py",
+    "version_notes": "Original symmetric long and short rules with completed H1 trend alignment, M5 reclaim, structural stop, fixed 2R target, and 180-minute exit."
+  },
+  {
+    "id": "h1_m5_pullback_reclaim@1.1.0",
+    "strategy_name": "H1 Trend + M5 Pullback Reclaim",
+    "version": "1.1.0",
+    "file_dir": "backend/app/strategies/H1 Trend + M5 Pullback Reclaim [1.1.0].py",
+    "version_notes": "Long-only refinement. Requires the absolute H1 EMA20–EMA50 spread to be at least 1.5 × M5 ATR14; all v1.0 risk and exit rules are retained."
+  },
+  {
+    "id": "h1_m5_pullback_reclaim@1.2.0",
+    "strategy_name": "H1 Trend + M5 Pullback Reclaim",
+    "version": "1.2.0",
+    "file_dir": "backend/app/strategies/H1 Trend + M5 Pullback Reclaim [1.2.0].py",
+    "version_notes": "Adds customizable per-session entry and realized-loss limits to the long-only v1.1 rules; defaults to four entries and two losses per New York session."
+  }
+]

@@ -3,29 +3,59 @@ import { Activity, AlertTriangle, BarChart3, ChevronDown, CircleDot, Database, M
 import { api } from "./api";
 import StrategyChart from "./components/Chart";
 import Results from "./components/Results";
+import { formatInteger } from "./format";
 import StrategyControls from "./components/StrategyControls";
-import type { Analysis, ChartAppearance, StrategySchema } from "./types";
+import { HomePage, NotFoundPage, PastBacktestsPage, SavedBacktestPage } from "./pages";
+import { compatibleTimeframes, preferredTimeframe } from "./strategyTimeframe";
+import { latestStrategyVersion, strategyKeys, versionsForStrategy } from "./strategyVersions";
+import AppearancePanel, { defaultIndicatorAppearance } from "./components/AppearancePanel";
+import type { Analysis, ChartAppearance, ChartPayload, StrategySchema, Trade } from "./types";
+
+type Theme = "dark" | "light";
+type Navigate = (path: string) => void;
 
 export default function App() {
+  const [path, setPath] = useState(() => window.location.pathname);
+  const [theme, setTheme] = useState<Theme>(() => localStorage.getItem("shefa-theme") === "light" ? "light" : "dark");
+  useEffect(() => {
+    const onPopState = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+  useEffect(() => { localStorage.setItem("shefa-theme", theme); }, [theme]);
+  useEffect(() => { window.scrollTo({ top: 0, left: 0 }); }, [path]);
+  const navigate: Navigate = (nextPath) => {
+    if (nextPath !== window.location.pathname) window.history.pushState({}, "", nextPath);
+    setPath(nextPath);
+  };
+  const pageProps = { navigate, theme, toggleTheme: () => setTheme((current) => current === "dark" ? "light" : "dark") };
+  if (path === "/") return <HomePage {...pageProps} />;
+  if (path === "/backtest/new") return <BacktestLab {...pageProps} />;
+  if (path === "/backtests") return <PastBacktestsPage {...pageProps} />;
+  const savedRunMatch = path.match(/^\/backtest\/([a-f0-9]{12})$/i);
+  if (savedRunMatch) return <SavedBacktestPage {...pageProps} runId={savedRunMatch[1].toLowerCase()} />;
+  return <NotFoundPage {...pageProps} />;
+}
+
+function BacktestLab({ theme, toggleTheme, navigate }: { theme: Theme; toggleTheme: () => void; navigate: Navigate }) {
   const [catalog, setCatalog] = useState<Record<string, string[]>>({});
   const [strategies, setStrategies] = useState<StrategySchema[]>([]);
   const [pair, setPair] = useState("");
   const [timeframe, setTimeframe] = useState("");
   const [strategyKey, setStrategyKey] = useState("");
+  const [strategyId, setStrategyId] = useState("");
   const [parameters, setParameters] = useState<Record<string, unknown>>({});
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [focusedTradeId, setFocusedTradeId] = useState<number | null>(null);
+  const [focusedChart, setFocusedChart] = useState<ChartPayload | null>(null);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [stale, setStale] = useState(false);
   const [error, setError] = useState("");
-  const [theme, setTheme] = useState<"dark" | "light">(() => localStorage.getItem("shefa-theme") === "light" ? "light" : "dark");
   const [sourceTimezone, setSourceTimezone] = useState("");
   const [appearance, setAppearance] = useState<ChartAppearance>({
-    basis: { visible: true, color: "#b8c0c8" },
-    bands: { visible: true, color: "#7387c4" },
-    fastEma: { visible: true, color: "#f0b84e" },
-    ao: { visible: true, upColor: "#32b98a", downColor: "#ee625d" },
-    trades: { visible: true, buyColor: "#22a978", sellColor: "#e0524d" },
+    indicators: {},
+    trades: { visible: true, buyColor: "#22a978", sellColor: "#e0524d", opacity: 100 },
   });
   const [execution, setExecution] = useState({
     initial_capital: 10000,
@@ -36,8 +66,11 @@ export default function App() {
     commission_per_quantity_per_side: 0,
   });
 
-  const strategy = useMemo(() => strategies.find((item) => item.key === strategyKey), [strategies, strategyKey]);
+  const strategy = useMemo(() => strategies.find((item) => item.id === strategyId), [strategies, strategyId]);
+  const strategyFamilies = useMemo(() => strategyKeys(strategies), [strategies]);
+  const strategyVersions = useMemo(() => versionsForStrategy(strategies, strategyKey), [strategies, strategyKey]);
   const pairs = Object.keys(catalog);
+  const timeframeOptions = compatibleTimeframes(strategy, catalog[pair] || []);
 
   useEffect(() => {
     Promise.all([api.catalog(), api.strategies()])
@@ -47,9 +80,11 @@ export default function App() {
         const firstPair = Object.keys(catalogResponse.datasets)[0] || "";
         setPair(firstPair);
         setTimeframe(catalogResponse.datasets[firstPair]?.[0] || "");
-        const firstStrategy = strategyResponse.strategies[0];
+        const firstKey = strategyKeys(strategyResponse.strategies)[0] || "";
+        const firstStrategy = latestStrategyVersion(strategyResponse.strategies, firstKey);
         if (firstStrategy) {
           setStrategyKey(firstStrategy.key);
+          setStrategyId(firstStrategy.id);
           setParameters(Object.fromEntries(firstStrategy.parameters.map((input) => [input.key, input.default])));
         }
       })
@@ -58,17 +93,24 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem("shefa-theme", theme);
-  }, [theme]);
+    if (!strategy) return;
+    setAppearance((current) => ({
+      ...current,
+      indicators: Object.fromEntries((strategy.plots || []).map((plot) => [
+        plot.key,
+        current.indicators[plot.key] || defaultIndicatorAppearance(plot),
+      ])),
+    }));
+  }, [strategy]);
 
   const selectPair = (value: string) => {
     setPair(value);
-    setTimeframe(catalog[value]?.[0] || "");
+    setTimeframe(preferredTimeframe(strategy, catalog[value] || []));
     setStale(Boolean(analysis));
   };
 
   const run = async () => {
-    if (!pair || !timeframe || !strategyKey) return;
+    if (!pair || !timeframe || !strategyId) return;
     setRunning(true);
     setError("");
     try {
@@ -76,6 +118,7 @@ export default function App() {
         pair,
         timeframe,
         strategy_key: strategyKey,
+        strategy_id: strategyId,
         parameters,
         initial_capital: execution.initial_capital,
         sizing_mode: "risk",
@@ -90,6 +133,8 @@ export default function App() {
         source_timezone: sourceTimezone || null,
       });
       setAnalysis(result);
+      setFocusedTradeId(null);
+      setFocusedChart(null);
       setStale(false);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Backtest failed");
@@ -103,13 +148,14 @@ export default function App() {
   return (
     <main className={`theme-${theme}`}>
       <header className="topbar">
-        <div className="brand"><div className="brand-mark"><BarChart3 size={18} /></div><div><strong>Shefa</strong><span>Strategy Lab</span></div></div>
+        <button className="brand" onClick={() => navigate("/")}><span className="brand-mark"><BarChart3 size={18} /></span><span className="brand-copy"><strong>Shefa</strong><span>Strategy Lab</span></span></button>
         <div className="selectors">
           <Selector label="Market" icon={<Database size={14} />} value={pair} options={pairs} onChange={selectPair} />
-          <Selector label="Timeframe" value={timeframe} options={catalog[pair] || []} onChange={(value) => { setTimeframe(value); setStale(Boolean(analysis)); }} />
-          <Selector label="Strategy" value={strategyKey} options={strategies.map((item) => item.key)} render={(value) => strategies.find((item) => item.key === value)?.name || value} onChange={(value) => { setStrategyKey(value); const next = strategies.find((item) => item.key === value); if (next) setParameters(Object.fromEntries(next.parameters.map((input) => [input.key, input.default]))); setStale(Boolean(analysis)); }} />
+          <Selector label="Timeframe" value={timeframe} options={timeframeOptions} onChange={(value) => { setTimeframe(value); setStale(Boolean(analysis)); }} />
+          <Selector label="Strategy" value={strategyKey} options={strategyFamilies} render={(value) => strategies.find((item) => item.key === value)?.name || value} onChange={(value) => { setStrategyKey(value); const next = latestStrategyVersion(strategies, value); if (next) { setStrategyId(next.id); applyStrategyVersion(next); } setStale(Boolean(analysis)); }} />
+          <Selector label="Version" value={strategyId} options={strategyVersions.map((item) => item.id)} render={(value) => `v${strategies.find((item) => item.id === value)?.version || value}`} onChange={(value) => { setStrategyId(value); const next = strategies.find((item) => item.id === value); if (next) applyStrategyVersion(next); setStale(Boolean(analysis)); }} />
         </div>
-        <button className="theme-button" onClick={() => setTheme((current) => current === "dark" ? "light" : "dark")} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
+        <button className="theme-button" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>
           {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
         </button>
         <button className="run-button" onClick={run} disabled={running || !pair || !timeframe}>
@@ -121,6 +167,7 @@ export default function App() {
       <div className="workspace">
         <aside className="sidebar">
           <div className="sidebar-title"><span><Settings2 size={15} /> Parameters</span><small>v{strategy?.version || "—"}</small></div>
+          {strategy?.version_notes && <div className="version-notes"><strong>Version notes</strong><p>{strategy.version_notes}</p></div>}
           {strategy && <StrategyControls strategy={strategy} values={parameters} onChange={(key, value) => { setParameters((current) => ({ ...current, [key]: value })); setStale(Boolean(analysis)); }} />}
           <section className="control-group">
             <h3>Execution</h3>
@@ -134,13 +181,7 @@ export default function App() {
           </section>
           <section className="control-group appearance-group">
             <h3><Palette size={11} /> Appearance</h3>
-            <AppearanceField label="BB basis" setting={appearance.basis} onChange={(setting) => setAppearance((current) => ({ ...current, basis: setting }))} />
-            <AppearanceField label="BB bands" setting={appearance.bands} onChange={(setting) => setAppearance((current) => ({ ...current, bands: setting }))} />
-            <AppearanceField label="Fast EMA" setting={appearance.fastEma} onChange={(setting) => setAppearance((current) => ({ ...current, fastEma: setting }))} />
-            <AppearanceField label="AO rising" setting={{ visible: appearance.ao.visible, color: appearance.ao.upColor }} onChange={(setting) => setAppearance((current) => ({ ...current, ao: { ...current.ao, visible: setting.visible, upColor: setting.color } }))} />
-            <AppearanceField label="AO falling" setting={{ visible: appearance.ao.visible, color: appearance.ao.downColor }} onChange={(setting) => setAppearance((current) => ({ ...current, ao: { ...current.ao, visible: setting.visible, downColor: setting.color } }))} />
-            <AppearanceField label="BUY markers" setting={{ visible: appearance.trades.visible, color: appearance.trades.buyColor }} onChange={(setting) => setAppearance((current) => ({ ...current, trades: { ...current.trades, visible: setting.visible, buyColor: setting.color } }))} />
-            <AppearanceField label="SELL markers" setting={{ visible: appearance.trades.visible, color: appearance.trades.sellColor }} onChange={(setting) => setAppearance((current) => ({ ...current, trades: { ...current.trades, visible: setting.visible, sellColor: setting.color } }))} />
+            <AppearancePanel plots={strategy?.plots || []} appearance={appearance} onChange={setAppearance} />
           </section>
         </aside>
 
@@ -162,10 +203,10 @@ export default function App() {
             <>
               {analysis.dataset.warnings.map((warning) => <div className="notice" key={warning}><AlertTriangle size={15} /><span>{warning}</span></div>)}
               <div className={stale ? "chart-shell stale-data" : "chart-shell"}>
-                <div className="chart-label"><span>{analysis.dataset.file_name}</span><span>{analysis.dataset.row_count.toLocaleString()} tested · {analysis.dataset.rendered_row_count.toLocaleString()} rendered</span></div>
-                <StrategyChart analysis={analysis} appearance={appearance} theme={theme} />
+                <div className="chart-label"><span>{analysis.dataset.file_name}</span><span>{focusedChart ? `${formatInteger(focusedChart.candles.length)} candles · focused trade` : `${formatInteger(analysis.dataset.row_count)} tested · ${formatInteger(analysis.dataset.rendered_row_count)} rendered`}</span></div>
+                <StrategyChart analysis={focusedChart ? { ...analysis, ...focusedChart } : analysis} appearance={appearance} theme={theme} focusTradeId={focusedTradeId} />
               </div>
-              <Results analysis={analysis} />
+              <Results analysis={analysis} initialCapital={execution.initial_capital} onSelectTrade={focusTrade} />
             </>
           ) : (
             <div className="empty-state ready">
@@ -185,6 +226,32 @@ export default function App() {
     setExecution((current) => ({ ...current, [key]: value }));
     setStale(Boolean(analysis));
   }
+
+  async function focusTrade(trade: Trade) {
+    if (!analysis) return;
+    if (chartContainsTrade(analysis.candles, trade)) {
+      setFocusedChart(null);
+      setFocusedTradeId(trade.trade_id);
+      return;
+    }
+    try {
+      const focused = await api.runChart(analysis.saved_run_id, trade.entry_time, trade.exit_time);
+      setFocusedChart(focused);
+      setFocusedTradeId(trade.trade_id);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not load the selected trade chart");
+    }
+  }
+
+  function applyStrategyVersion(next: StrategySchema) {
+    setParameters(Object.fromEntries(next.parameters.map((input) => [input.key, input.default])));
+    if (next.required_timeframe) setTimeframe(preferredTimeframe(next, catalog[pair] || []));
+  }
+}
+
+function chartContainsTrade(candles: Analysis["candles"], trade: Trade) {
+  if (!candles.length) return false;
+  return Date.parse(trade.entry_time) >= Date.parse(candles[0].time) && Date.parse(trade.exit_time) <= Date.parse(candles.at(-1)!.time);
 }
 
 function Selector({ label, icon, value, options, onChange, render = (value: string) => value }: { label: string; icon?: React.ReactNode; value: string; options: string[]; onChange: (value: string) => void; render?: (value: string) => string }) {
@@ -193,8 +260,4 @@ function Selector({ label, icon, value, options, onChange, render = (value: stri
 
 function ExecutionField({ label, value, step, onChange }: { label: string; value: number; step: number; onChange: (value: number) => void }) {
   return <label className="field"><span>{label}</span><input type="number" min={0} step={step} value={value} onChange={(event) => onChange(Number(event.target.value))} /></label>;
-}
-
-function AppearanceField({ label, setting, onChange }: { label: string; setting: { visible: boolean; color: string }; onChange: (setting: { visible: boolean; color: string }) => void }) {
-  return <div className="appearance-row"><label><input type="checkbox" checked={setting.visible} onChange={(event) => onChange({ ...setting, visible: event.target.checked })} /><span>{label}</span></label><input type="color" value={setting.color} aria-label={`${label} color`} onChange={(event) => onChange({ ...setting, color: event.target.value })} /></div>;
 }

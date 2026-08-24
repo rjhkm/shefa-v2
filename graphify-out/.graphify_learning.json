@@ -1,0 +1,180 @@
+{
+  "generated_at": "2026-08-24T06:39:56.762130+00:00",
+  "nodes": {
+    "backend_app_backtest_calculate_strategy_diagnostics": {
+      "code_fingerprint": "eed3e470529f6902d3322a98fd750ebc679ec3194998d7b5c4411e35ff63dd2d",
+      "label": "calculate_strategy_diagnostics()",
+      "last": "2026-08-24T06:12:07.062403+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T06:12:07.062403+00:00",
+          "outcome": "useful",
+          "q": "What is the diagnosis of H1 Trend + M5 Pullback Reclaim and how can it improve?"
+        }
+      ],
+      "score": 0.999553592,
+      "source_file": "backend/app/backtest.py",
+      "status": "tentative",
+      "uses": 1
+    },
+    "backend_app_backtest_run_backtest": {
+      "code_fingerprint": "eed3e470529f6902d3322a98fd750ebc679ec3194998d7b5c4411e35ff63dd2d",
+      "label": "run_backtest()",
+      "last": "2026-08-24T06:12:07.062403+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T06:12:07.062403+00:00",
+          "outcome": "useful",
+          "q": "What is the diagnosis of H1 Trend + M5 Pullback Reclaim and how can it improve?"
+        },
+        {
+          "date": "2026-08-24T05:13:09.499121+00:00",
+          "outcome": "useful",
+          "q": "Create the H1 Trend + M5 Pullback Reclaim strategy after M1 candles were added."
+        },
+        {
+          "date": "2026-08-24T04:51:03.428198+00:00",
+          "outcome": "useful",
+          "q": "Develop H1 Trend + M5 Pullback Reclaim strategy in Shefa; tell me your plan first."
+        }
+      ],
+      "score": 2.996416441,
+      "source_file": "backend/app/backtest.py",
+      "status": "preferred",
+      "uses": 3
+    },
+    "backend_app_backtest_update_excursion": {
+      "code_fingerprint": "eed3e470529f6902d3322a98fd750ebc679ec3194998d7b5c4411e35ff63dd2d",
+      "label": "_update_excursion()",
+      "last": "2026-08-24T06:12:07.062403+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T06:12:07.062403+00:00",
+          "outcome": "useful",
+          "q": "What is the diagnosis of H1 Trend + M5 Pullback Reclaim and how can it improve?"
+        }
+      ],
+      "score": 0.999553592,
+      "source_file": "backend/app/backtest.py",
+      "status": "tentative",
+      "uses": 1
+    },
+    "backend_app_data_candlerepository": {
+      "code_fingerprint": "604774b23b40a4a3f2d673a4d5a16d60044788910833c9b71c88a51a3bf91b34",
+      "label": "CandleRepository",
+      "last": "2026-08-24T05:13:09.499121+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T05:13:09.499121+00:00",
+          "outcome": "useful",
+          "q": "Create the H1 Trend + M5 Pullback Reclaim strategy after M1 candles were added."
+        },
+        {
+          "date": "2026-08-24T04:51:03.428198+00:00",
+          "outcome": "useful",
+          "q": "Develop H1 Trend + M5 Pullback Reclaim strategy in Shefa; tell me your plan first."
+        }
+      ],
+      "score": 1.996862849,
+      "source_file": "backend/app/data.py",
+      "status": "preferred",
+      "uses": 2
+    },
+    "backend_app_strategies_base_strategy": {
+      "code_fingerprint": "8c164d51fe1cc05c9a625602abcfd66f60092b76ecb048579ea583129413dea9",
+      "label": "Strategy",
+      "last": "2026-08-24T05:13:09.499121+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T05:13:09.499121+00:00",
+          "outcome": "useful",
+          "q": "Create the H1 Trend + M5 Pullback Reclaim strategy after M1 candles were added."
+        },
+        {
+          "date": "2026-08-24T04:51:03.428198+00:00",
+          "outcome": "useful",
+          "q": "Develop H1 Trend + M5 Pullback Reclaim strategy in Shefa; tell me your plan first."
+        }
+      ],
+      "score": 1.996862849,
+      "source_file": "backend/app/strategies/base.py",
+      "status": "preferred",
+      "uses": 2
+    },
+    "readme_completed_candle_execution": {
+      "code_fingerprint": "e380f7937eff1563eb3598242611a71419dc9ab438a25827d9c3d932d66f69e6",
+      "label": "Completed-Candle Execution",
+      "last": "2026-08-24T05:13:09.499121+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T05:13:09.499121+00:00",
+          "outcome": "useful",
+          "q": "Create the H1 Trend + M5 Pullback Reclaim strategy after M1 candles were added."
+        },
+        {
+          "date": "2026-08-24T04:51:03.428198+00:00",
+          "outcome": "useful",
+          "q": "Develop H1 Trend + M5 Pullback Reclaim strategy in Shefa; tell me your plan first."
+        }
+      ],
+      "score": 1.996862849,
+      "source_file": "README.md",
+      "status": "preferred",
+      "uses": 2
+    },
+    "tests_test_backtest_test_strategy_supplied_swing_stop_is_frozen_at_the_next_open": {
+      "code_fingerprint": "3248989e893261a70a83fe4cf397b73077c1aaf01d877761363cf08c8311d40c",
+      "label": "test_strategy_supplied_swing_stop_is_frozen_at_the_next_open()",
+      "last": "2026-08-24T05:13:09.499121+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T05:13:09.499121+00:00",
+          "outcome": "useful",
+          "q": "Create the H1 Trend + M5 Pullback Reclaim strategy after M1 candles were added."
+        },
+        {
+          "date": "2026-08-24T04:51:03.428198+00:00",
+          "outcome": "useful",
+          "q": "Develop H1 Trend + M5 Pullback Reclaim strategy in Shefa; tell me your plan first."
+        }
+      ],
+      "score": 1.996862849,
+      "source_file": "tests/test_backtest.py",
+      "status": "preferred",
+      "uses": 2
+    },
+    "xauusd_strategy_lab_prd_v1_0_cost_model": {
+      "code_fingerprint": "b9d13eb52ec3c7b741c560e6e571c9140188c61f24a57ef2f6e4ec2e9be3dfc9",
+      "label": "Adverse Cost Model",
+      "last": "2026-08-24T06:12:07.062403+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T06:12:07.062403+00:00",
+          "outcome": "useful",
+          "q": "What is the diagnosis of H1 Trend + M5 Pullback Reclaim and how can it improve?"
+        }
+      ],
+      "score": 0.999553592,
+      "source_file": "XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "status": "tentative",
+      "uses": 1
+    },
+    "xauusd_strategy_lab_prd_v1_0_risk_based_position_sizing": {
+      "code_fingerprint": "b9d13eb52ec3c7b741c560e6e571c9140188c61f24a57ef2f6e4ec2e9be3dfc9",
+      "label": "Risk-Based Position Sizing",
+      "last": "2026-08-24T06:12:07.062403+00:00",
+      "provenance": [
+        {
+          "date": "2026-08-24T06:12:07.062403+00:00",
+          "outcome": "useful",
+          "q": "What is the diagnosis of H1 Trend + M5 Pullback Reclaim and how can it improve?"
+        }
+      ],
+      "score": 0.999553592,
+      "source_file": "XAUUSD-Strategy-Lab-PRD-v1.0.pdf",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

@@ -11,10 +11,26 @@ export type InputSchema = {
 };
 
 export type StrategySchema = {
+  id: string;
   key: string;
   name: string;
   version: string;
+  file_dir: string;
+  version_notes: string;
+  required_timeframe: string | null;
   parameters: InputSchema[];
+  plots?: PlotSchema[];
+};
+
+export type PlotSchema = {
+  key: string;
+  label: string;
+  type: "line" | "histogram";
+  line_type?: "straight" | "step";
+  color: string;
+  negative_color?: string;
+  line_width?: number;
+  pane?: number;
 };
 
 export type Candle = {
@@ -26,6 +42,8 @@ export type Candle = {
 };
 
 export type ValuePoint = { time: string; value: number };
+export type TradeLabelMode = "cash" | "percent" | "pips";
+export type ChartPayload = { candles: Candle[]; plot_schema: PlotSchema[]; plots: Record<string, ValuePoint[]>; chart_warning?: string | null };
 
 export type Trade = {
   trade_id: number;
@@ -56,6 +74,7 @@ export type Trade = {
   reached_half_r: boolean;
   reached_one_r: boolean;
   target_stop_collision: boolean;
+  market_regime?: string;
 };
 
 export type OutcomeSummary = {
@@ -82,13 +101,7 @@ export type StrategyDiagnostics = {
   context_outcomes: Record<string, { label: string; unit: string; buckets: ContextBucket[] }>;
 };
 
-export type Analysis = {
-  dataset: { file_name: string; dataset_hash: string; row_count: number; rendered_row_count: number; gap_count: number; market_closure_count: number; source_timezone: string; warnings: string[]; encoding: string; source_format: string };
-  strategy: { key: string; name: string; version: string; parameters: Record<string, unknown> };
-  candles: Candle[];
-  plots: Record<string, ValuePoint[]>;
-  trades: Trade[];
-  metrics: {
+export type BacktestMetrics = {
     closed_trades: number;
     net_profit: number;
     return_percent: number;
@@ -97,19 +110,82 @@ export type Analysis = {
     expectancy_r: number;
     max_drawdown: number;
     max_drawdown_percent: number;
-  };
+    consecutive_wins: number;
+    consecutive_losses: number;
+    recovery_factor: number | null;
+    expectancy_per_trade: number;
+    payoff_ratio: number | null;
+    max_drawdown_duration_seconds: number;
+    longest_recovery_seconds: number;
+    average_holding_seconds: number;
+    time_in_market_percent: number;
+    gross_result: number;
+    net_result: number;
+    total_costs: number;
+};
+
+export type BacktestResult = {
+  strategy: { name: string; version: string };
+  trades: Trade[];
+  metrics: BacktestMetrics;
   strategy_diagnostics: StrategyDiagnostics;
   equity: ValuePoint[];
   drawdown: ValuePoint[];
   fingerprint: string;
-  engine_version: string;
   saved_run_id: string;
+  candles?: Candle[];
+};
+
+export type Analysis = BacktestResult & {
+  dataset: { file_name: string; dataset_hash: string; row_count: number; rendered_row_count: number; gap_count: number; market_closure_count: number; source_timezone: string; warnings: string[]; encoding: string; source_format: string };
+  strategy: { id: string; key: string; name: string; version: string; version_notes: string; parameters: Record<string, unknown> };
+  candles: Candle[];
+  plot_schema: PlotSchema[];
+  plots: Record<string, ValuePoint[]>;
+  engine_version: string;
+};
+
+export type RunSummary = {
+  run_id: string;
+  created_at: string;
+  pair: string;
+  timeframe: string;
+  strategy_name: string;
+  strategy_version: string;
+  run_start_time: string | null;
+  run_end_time: string | null;
+  run_days: number | null;
+  equity_change: number;
+  equity_change_percent: number;
+  metrics: BacktestMetrics;
+};
+
+export type SavedRun = Omit<BacktestResult, "saved_run_id"> & {
+  run_id: string;
+  created_at: string;
+  pair: string;
+  timeframe: string;
+  run_start_time?: string | null;
+  run_end_time?: string | null;
+  dataset: Analysis["dataset"];
+  strategy: { id?: string; key: string; name: string; version: string; version_notes?: string; parameters: Record<string, unknown> };
+  execution: Record<string, unknown>;
+  engine_version: string;
+  candles: Candle[];
+  plot_schema: PlotSchema[];
+  plots: Record<string, ValuePoint[]>;
+  chart_warning?: string | null;
+};
+
+export type IndicatorAppearance = {
+  visible: boolean;
+  color: string;
+  negativeColor?: string;
+  lineWidth: number;
+  opacity: number;
 };
 
 export type ChartAppearance = {
-  basis: { visible: boolean; color: string };
-  bands: { visible: boolean; color: string };
-  fastEma: { visible: boolean; color: string };
-  ao: { visible: boolean; upColor: string; downColor: string };
-  trades: { visible: boolean; buyColor: string; sellColor: string };
+  indicators: Record<string, IndicatorAppearance>;
+  trades: { visible: boolean; buyColor: string; sellColor: string; opacity: number };
 };

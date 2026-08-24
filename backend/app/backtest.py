@@ -4,13 +4,15 @@ import hashlib
 import json
 import math
 from dataclasses import asdict, dataclass
+from datetime import datetime, time, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import numpy as np
 import pandas as pd
 
 
-ENGINE_VERSION = "1.1.0"
+ENGINE_VERSION = "1.4.0"
 
 
 @dataclass
@@ -64,16 +66,31 @@ def run_backtest(frame: pd.DataFrame, params: dict[str, Any], config: dict[str, 
     position: dict[str, Any] | None = None
     pending_entry: dict[str, Any] | None = None
     pending_exit = False
+    session_activity: dict[str, dict[str, int]] = {}
 
     for index, row in frame.iterrows():
         if pending_exit and position:
             _close(position, float(row.open), row.timestamp, "ao_reversal", index, config, trades)
+            _record_session_loss(session_activity, position, trades[-1])
             equity += trades[-1].net_pnl
             equity_points.append({"time": row.timestamp.isoformat(), "value": equity})
             position = None
             pending_exit = False
 
+        if position:
+            deadline_reason = _deadline_reason_at_open(position, row.timestamp)
+            if deadline_reason:
+                _close(position, float(row.open), row.timestamp, deadline_reason, index, config, trades)
+                _record_session_loss(session_activity, position, trades[-1])
+                equity += trades[-1].net_pnl
+                equity_points.append({"time": row.timestamp.isoformat(), "value": equity})
+                position = None
+
         if pending_entry and position is None:
+            session_key = _session_key(row.timestamp, params)
+            if _session_entry_limit_reached(session_activity, session_key, params):
+                pending_entry = None
+                continue
             proposed_stop = pending_entry.get("stop_price")
             if proposed_stop is not None:
                 stop_distance = abs(float(row.open) - proposed_stop)
@@ -113,7 +130,11 @@ def run_backtest(frame: pd.DataFrame, params: dict[str, Any], config: dict[str, 
                         "max_favorable_r": 0.0,
                         "max_adverse_r": 0.0,
                         "target_stop_collision": False,
+                        "time_exit_at": _time_exit_at(row.timestamp, params),
+                        "session_close_at": _next_session_close(row.timestamp, params),
+                        "session_key": session_key,
                     }
+                    _record_session_entry(session_activity, session_key)
             pending_entry = None
 
         if position:
@@ -129,9 +150,25 @@ def run_backtest(frame: pd.DataFrame, params: dict[str, Any], config: dict[str, 
                 reason = "stop" if stop_hit else "target"
                 price = position["stop"] if stop_hit else position["target"]
                 _close(position, price, row.timestamp, reason, index, config, trades)
+                _record_session_loss(session_activity, position, trades[-1])
                 equity += trades[-1].net_pnl
                 equity_points.append({"time": row.timestamp.isoformat(), "value": equity})
                 position = None
+
+        if position and _session_closes_on_bar(position, row.timestamp):
+            _close(
+                position,
+                float(row.close),
+                position["session_close_at"],
+                "session_close",
+                index,
+                config,
+                trades,
+            )
+            _record_session_loss(session_activity, position, trades[-1])
+            equity += trades[-1].net_pnl
+            equity_points.append({"time": row.timestamp.isoformat(), "value": equity})
+            position = None
 
         if position:
             pending_exit = bool(row.exit_long if position["direction"] == "long" else row.exit_short)
@@ -144,14 +181,22 @@ def run_backtest(frame: pd.DataFrame, params: dict[str, Any], config: dict[str, 
     if position:
         last = frame.iloc[-1]
         _close(position, float(last.close), last.timestamp, "end_of_data", len(frame) - 1, config, trades)
+        _record_session_loss(session_activity, position, trades[-1])
         equity += trades[-1].net_pnl
         equity_points.append({"time": last.timestamp.isoformat(), "value": equity})
 
+    if len(frame):
+        final_time = frame.iloc[-1]["timestamp"].isoformat()
+        if not equity_points or equity_points[-1]["time"] != final_time:
+            equity_points.append({"time": final_time, "value": equity})
+
     trade_dicts = [asdict(trade) for trade in trades]
+    add_market_regimes(trade_dicts, frame)
     metrics, drawdown = calculate_metrics(trade_dicts, config["initial_capital"], equity_points)
     fingerprint_payload = {
         "dataset_hash": config["dataset_hash"],
         "strategy_key": config["strategy_key"],
+        "strategy_id": config.get("strategy_id"),
         "strategy_version": config["strategy_version"],
         "engine_version": ENGINE_VERSION,
         "parameters": params,
@@ -171,6 +216,26 @@ def run_backtest(frame: pd.DataFrame, params: dict[str, Any], config: dict[str, 
     }
 
 
+def add_market_regimes(trades: list[dict[str, Any]], frame: pd.DataFrame) -> None:
+    """Attach a signal-time, backward-looking 20-bar price regime to each trade."""
+    if frame.empty or not trades:
+        return
+    returns = frame["close"].pct_change()
+    momentum = frame["close"] / frame["close"].shift(20) - 1
+    noise = np.sqrt(returns.pow(2).rolling(20).sum())
+    timestamps = frame["timestamp"].reset_index(drop=True)
+    for trade in trades:
+        position = int(timestamps.searchsorted(pd.Timestamp(trade["entry_time"]), side="right")) - 1
+        if position < 20 or not np.isfinite(momentum.iloc[position]) or not np.isfinite(noise.iloc[position]):
+            trade["market_regime"] = "Insufficient lookback"
+        elif abs(momentum.iloc[position]) <= noise.iloc[position] * 1.25:
+            trade["market_regime"] = "Range / mixed"
+        elif momentum.iloc[position] > 0:
+            trade["market_regime"] = "Uptrend"
+        else:
+            trade["market_regime"] = "Downtrend"
+
+
 def _pending_entry(direction: str, row: pd.Series, config: dict[str, Any]) -> dict[str, Any]:
     schema = config.get("strategy_diagnostic_schema", [])
     return {
@@ -185,6 +250,97 @@ def _pending_entry(direction: str, row: pd.Series, config: dict[str, Any]) -> di
             for field in schema
         },
     }
+
+
+def _time_exit_at(entry_time: pd.Timestamp, params: dict[str, Any]) -> pd.Timestamp | None:
+    minutes = params.get("max_holding_minutes")
+    if minutes is None:
+        return None
+    return entry_time + pd.Timedelta(float(minutes), unit="min")
+
+
+def _next_session_close(entry_time: pd.Timestamp, params: dict[str, Any]) -> pd.Timestamp | None:
+    timezone_name = params.get("session_timezone")
+    hour = params.get("session_close_hour")
+    minute = params.get("session_close_minute")
+    if timezone_name is None or hour is None or minute is None:
+        return None
+    try:
+        timezone = ZoneInfo(str(timezone_name))
+    except ZoneInfoNotFoundError as error:
+        raise ValueError(f"Unknown session timezone: {timezone_name}") from error
+    local_entry = entry_time.tz_convert(timezone)
+    close_date = local_entry.date()
+    local_close = pd.Timestamp(
+        datetime.combine(close_date, time(hour=int(hour), minute=int(minute))),
+        tz=timezone,
+    )
+    if local_close <= local_entry:
+        close_date += timedelta(days=1)
+        local_close = pd.Timestamp(
+            datetime.combine(close_date, time(hour=int(hour), minute=int(minute))),
+            tz=timezone,
+        )
+    return local_close.tz_convert("UTC")
+
+
+def _session_key(timestamp: pd.Timestamp, params: dict[str, Any]) -> str | None:
+    session_close = _next_session_close(timestamp, params)
+    return session_close.isoformat() if session_close is not None else None
+
+
+def _session_entry_limit_reached(
+    activity: dict[str, dict[str, int]],
+    session_key: str | None,
+    params: dict[str, Any],
+) -> bool:
+    if session_key is None:
+        return False
+    counters = activity.get(session_key, {"entries": 0, "losses": 0})
+    max_entries = params.get("max_session_entries")
+    max_losses = params.get("max_session_losses")
+    return bool(
+        (max_entries is not None and counters["entries"] >= int(max_entries))
+        or (max_losses is not None and counters["losses"] >= int(max_losses))
+    )
+
+
+def _record_session_entry(
+    activity: dict[str, dict[str, int]], session_key: str | None
+) -> None:
+    if session_key is None:
+        return
+    counters = activity.setdefault(session_key, {"entries": 0, "losses": 0})
+    counters["entries"] += 1
+
+
+def _record_session_loss(
+    activity: dict[str, dict[str, int]],
+    position: dict[str, Any],
+    trade: Trade,
+) -> None:
+    session_key = position.get("session_key")
+    if session_key is None or trade.net_pnl >= 0:
+        return
+    counters = activity.setdefault(session_key, {"entries": 0, "losses": 0})
+    counters["losses"] += 1
+
+
+def _deadline_reason_at_open(position: dict[str, Any], timestamp: pd.Timestamp) -> str | None:
+    reached = [
+        (position.get("time_exit_at"), "time_exit"),
+        (position.get("session_close_at"), "session_close"),
+    ]
+    reached = [(deadline, reason) for deadline, reason in reached if deadline is not None and timestamp >= deadline]
+    return min(reached, key=lambda item: item[0])[1] if reached else None
+
+
+def _session_closes_on_bar(position: dict[str, Any], timestamp: pd.Timestamp) -> bool:
+    deadline = position.get("session_close_at")
+    return bool(
+        deadline is not None
+        and timestamp < deadline <= timestamp + pd.Timedelta(1, unit="min")
+    )
 
 
 def _finite_or_none(value: Any) -> float | None:
@@ -263,6 +419,22 @@ def calculate_metrics(trades: list[dict[str, Any]], initial_capital: float, equi
         max_drawdown = max(max_drawdown, dd)
         drawdown.append({"time": point["time"], "value": -dd})
     net = sum(trade["net_pnl"] for trade in trades)
+    gross_result = sum(trade.get("gross_pnl", trade["net_pnl"]) for trade in trades)
+    total_costs = sum(
+        trade.get("spread_cost", 0)
+        + trade.get("slippage_cost", 0)
+        + trade.get("commission_cost", 0)
+        for trade in trades
+    )
+    average_win = gross_wins / len(winners) if winners else 0.0
+    average_loss = gross_losses / len(losers) if losers else 0.0
+    max_wins, max_losses = _consecutive_streaks(trades)
+    max_drawdown_duration, longest_recovery = _drawdown_durations(equity)
+    holding_seconds = [
+        (pd.Timestamp(trade["exit_time"]) - pd.Timestamp(trade["entry_time"])).total_seconds()
+        for trade in trades
+        if trade.get("entry_time") and trade.get("exit_time")
+    ]
     return {
         "closed_trades": len(trades),
         "net_profit": net,
@@ -272,7 +444,85 @@ def calculate_metrics(trades: list[dict[str, Any]], initial_capital: float, equi
         "expectancy_r": float(np.mean([trade["result_r"] for trade in trades])) if trades else 0,
         "max_drawdown": max_drawdown,
         "max_drawdown_percent": max_drawdown / initial_capital * 100,
+        "consecutive_wins": max_wins,
+        "consecutive_losses": max_losses,
+        "recovery_factor": net / max_drawdown if max_drawdown else None,
+        "expectancy_per_trade": net / len(trades) if trades else 0.0,
+        "payoff_ratio": average_win / average_loss if average_loss else None,
+        "max_drawdown_duration_seconds": max_drawdown_duration,
+        "longest_recovery_seconds": longest_recovery,
+        "average_holding_seconds": float(np.mean(holding_seconds)) if holding_seconds else 0.0,
+        "time_in_market_percent": _time_in_market_percent(trades, equity),
+        "gross_result": gross_result,
+        "net_result": net,
+        "total_costs": total_costs,
     }, drawdown
+
+
+def _consecutive_streaks(trades: list[dict[str, Any]]) -> tuple[int, int]:
+    max_wins = max_losses = wins = losses = 0
+    for trade in trades:
+        result = trade["net_pnl"]
+        wins = wins + 1 if result > 0 else 0
+        losses = losses + 1 if result < 0 else 0
+        max_wins = max(max_wins, wins)
+        max_losses = max(max_losses, losses)
+    return max_wins, max_losses
+
+
+def _drawdown_durations(equity: list[dict[str, Any]]) -> tuple[float, float]:
+    if not equity:
+        return 0.0, 0.0
+    peak_value = equity[0]["value"]
+    peak_time = pd.Timestamp(equity[0]["time"])
+    trough_time = peak_time
+    trough_value = peak_value
+    max_duration = longest_recovery = 0.0
+    underwater = False
+    for point in equity[1:]:
+        timestamp = pd.Timestamp(point["time"])
+        value = point["value"]
+        if value >= peak_value:
+            if underwater:
+                max_duration = max(max_duration, (timestamp - peak_time).total_seconds())
+                longest_recovery = max(longest_recovery, (timestamp - trough_time).total_seconds())
+            peak_value, peak_time = value, timestamp
+            trough_value, trough_time = value, timestamp
+            underwater = False
+        else:
+            underwater = True
+            if value < trough_value:
+                trough_value, trough_time = value, timestamp
+    if underwater:
+        final_time = pd.Timestamp(equity[-1]["time"])
+        max_duration = max(max_duration, (final_time - peak_time).total_seconds())
+        longest_recovery = max(longest_recovery, (final_time - trough_time).total_seconds())
+    return max_duration, longest_recovery
+
+
+def _time_in_market_percent(trades: list[dict[str, Any]], equity: list[dict[str, Any]]) -> float:
+    if len(equity) < 2:
+        return 0.0
+    run_seconds = (pd.Timestamp(equity[-1]["time"]) - pd.Timestamp(equity[0]["time"])).total_seconds()
+    if run_seconds <= 0:
+        return 0.0
+    intervals = sorted(
+        (pd.Timestamp(trade["entry_time"]), pd.Timestamp(trade["exit_time"]))
+        for trade in trades
+        if trade.get("entry_time") and trade.get("exit_time")
+    )
+    occupied = 0.0
+    current_start = current_end = None
+    for start, end in intervals:
+        if current_end is None or start > current_end:
+            if current_start is not None:
+                occupied += (current_end - current_start).total_seconds()
+            current_start, current_end = start, end
+        else:
+            current_end = max(current_end, end)
+    if current_start is not None:
+        occupied += (current_end - current_start).total_seconds()
+    return min(100.0, occupied / run_seconds * 100)
 
 
 def calculate_strategy_diagnostics(trades: list[dict[str, Any]], schema: list[dict[str, Any]]) -> dict[str, Any]:

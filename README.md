@@ -24,7 +24,7 @@ If you need to run only the frontend, use `npm run dev:frontend`; it requires an
 
 ## Candle files
 
-Place files in `data/candles/` using `PAIR - TIMEFRAME.csv`, such as `XAUUSD - M15.csv` or `XAUUSD - 15m.csv`. MetaTrader labels (`M5`, `M15`, `H1`, `H4`) are normalized automatically. Every named file becomes an available chart selection; the MVP does not aggregate timeframes.
+Place files in `data/candles/` using `PAIR - TIMEFRAME.csv`, such as `XAUUSD - M15.csv` or `XAUUSD - 15m.csv`. MetaTrader labels (`M1`, `M5`, `M15`, `H1`, `H4`) are normalized automatically. Every named file becomes an available chart selection. Multi-timeframe strategies may derive complete higher-timeframe bars from M1 without using incomplete candles.
 
 Required columns:
 
@@ -69,9 +69,15 @@ Validate every candle file and run a complete baseline backtest against each one
 .\.venv\Scripts\python.exe scripts\validate_datasets.py
 ```
 
+## Strategy versions
+
+Selectable strategy versions are registered in `backend/app/strategies/strategy_versions.json`. Each entry contains an exact version ID, strategy name, version, Python file path, and user-facing version notes. Versioned files may use the readable `Strategy Name [1.2.3].py` convention because the backend loads the trusted file path from the registry rather than importing it as a normal Python module name.
+
+The Strategy selector chooses a strategy family and defaults to its highest numeric version. The Version selector chooses the exact implementation used by the backtest. Requests may still provide only `strategy_key` for backward compatibility; these resolve to the latest registered version.
+
 ## Adding a converted Pine strategy
 
-Create a folder under `backend/app/strategies/` with a strategy class derived from `Strategy`. Define its typed `parameter_schema`, calculate indicators without future-looking operations, and return the standard signal columns. Register the class in `backend/app/strategies/__init__.py` and add trusted reference-vector tests alongside the conversion.
+Create a Python file under `backend/app/strategies/` with one concrete strategy class derived from `Strategy`. Define its typed `parameter_schema`, calculate indicators without future-looking operations, and return the standard signal columns. Add its metadata to `strategy_versions.json` and add trusted reference-vector tests alongside the conversion.
 
 ## Saved runs
 

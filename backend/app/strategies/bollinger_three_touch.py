@@ -27,6 +27,13 @@ class BollingerThreeTouchStrategy(Strategy):
         {"key": "reward_risk", "label": "Target R", "type": "float", "default": 1.5, "min": 0.1, "max": 20, "step": 0.1, "group": "Risk"},
     ]
 
+    def plot_schema(self) -> list[dict[str, Any]]:
+        return [
+            {"key": "bb_basis", "label": "BB basis", "type": "line", "color": "#b8c0c8", "line_width": 2},
+            {"key": "bb_upper", "label": "BB upper", "type": "line", "color": "#7387c4", "line_width": 2},
+            {"key": "bb_lower", "label": "BB lower", "type": "line", "color": "#7387c4", "line_width": 2},
+        ]
+
     def diagnostic_schema(self) -> list[dict[str, Any]]:
         return [
             {"key": "bb_width_atr", "column": "bb_width_atr", "label": "Bollinger width", "unit": "ATR", "analyze": True},

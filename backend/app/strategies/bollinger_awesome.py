@@ -53,6 +53,15 @@ class BollingerAwesomeStrategy(Strategy):
         {"key": "reward_risk", "label": "Target R", "type": "float", "default": 1.5, "min": 0.1, "max": 20, "step": 0.1, "group": "Risk"},
     ]
 
+    def plot_schema(self) -> list[dict[str, Any]]:
+        return [
+            {"key": "bb_basis", "label": "BB basis", "type": "line", "color": "#b8c0c8", "line_width": 2},
+            {"key": "bb_upper", "label": "BB upper", "type": "line", "color": "#7387c4", "line_width": 2},
+            {"key": "bb_lower", "label": "BB lower", "type": "line", "color": "#7387c4", "line_width": 2},
+            {"key": "fast_ema", "label": "Fast EMA", "type": "line", "color": "#f0b84e", "line_width": 3},
+            {"key": "ao", "label": "Awesome oscillator", "type": "histogram", "color": "#32b98a", "negative_color": "#ee625d", "pane": 1},
+        ]
+
     def parameters(self, supplied: dict[str, Any]) -> dict[str, Any]:
         values = super().parameters(supplied)
         if values["nLengthFast"] >= values["nLengthSlow"]:

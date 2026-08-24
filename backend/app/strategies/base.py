@@ -7,9 +7,13 @@ import pandas as pd
 
 
 class Strategy(ABC):
+    id: str
     key: str
     name: str
     version: str
+    version_notes: str
+    file_dir: str
+    required_timeframe: str | None = None
     parameter_schema: list[dict[str, Any]]
 
     def parameters(self, supplied: dict[str, Any]) -> dict[str, Any]:
@@ -35,6 +39,10 @@ class Strategy(ABC):
         ``column`` refers to a column produced by ``calculate``.  Fields marked
         ``analyze`` are included in the run-level outcome buckets.
         """
+        return []
+
+    def plot_schema(self) -> list[dict[str, Any]]:
+        """Describe the strategy-owned plots exposed to the chart UI."""
         return []
 
     @abstractmethod
