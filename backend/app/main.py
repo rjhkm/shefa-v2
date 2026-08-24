@@ -78,6 +78,7 @@ def analyze(request: AnalyzeRequest) -> dict:
             **request.model_dump(),
             "dataset_hash": metadata["dataset_hash"],
             "strategy_version": strategy.version,
+            "strategy_diagnostic_schema": strategy.diagnostic_schema(),
         }
         result = run_backtest(frame, params, config)
     except (CandleDataError, ValueError) as error:
@@ -86,6 +87,8 @@ def analyze(request: AnalyzeRequest) -> dict:
     chart_frame = frame.tail(20_000)
 
     def points(column: str) -> list[dict]:
+        if column not in chart_frame:
+            return []
         clean = chart_frame[["timestamp", column]].dropna()
         return [{"time": row.timestamp.isoformat(), "value": float(getattr(row, column))} for row in clean.itertuples()]
 
@@ -127,6 +130,7 @@ def analyze(request: AnalyzeRequest) -> dict:
                 if key not in {"pair", "timeframe", "strategy_key", "parameters"}
             },
             "metrics": result["metrics"],
+            "strategy_diagnostics": result["strategy_diagnostics"],
             "trades": result["trades"],
             "equity": result["equity"],
             "drawdown": result["drawdown"],

@@ -29,6 +29,14 @@ class Strategy(ABC):
                 raise ValueError(f"Invalid value for {item['label']}")
         return values
 
+    def diagnostic_schema(self) -> list[dict[str, Any]]:
+        """Describe decision-time values the engine should freeze on each trade.
+
+        ``column`` refers to a column produced by ``calculate``.  Fields marked
+        ``analyze`` are included in the run-level outcome buckets.
+        """
+        return []
+
     @abstractmethod
     def calculate(self, candles: pd.DataFrame, params: dict[str, Any]) -> pd.DataFrame:
         raise NotImplementedError

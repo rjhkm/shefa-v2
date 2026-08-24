@@ -5,6 +5,7 @@ const money = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD
 
 export default function Results({ analysis }: { analysis: Analysis }) {
   const { metrics } = analysis;
+  const diagnostics = analysis.strategy_diagnostics;
   const pageSize = 25;
   const [page, setPage] = useState(1);
   const pageCount = Math.max(1, Math.ceil(analysis.trades.length / pageSize));
@@ -18,6 +19,22 @@ export default function Results({ analysis }: { analysis: Analysis }) {
         <Metric label="Profit factor" value={metrics.profit_factor == null ? "—" : metrics.profit_factor.toFixed(2)} detail={`${metrics.expectancy_r.toFixed(2)}R expectancy`} />
         <Metric label="Max drawdown" value={money.format(metrics.max_drawdown)} tone="negative" detail={`${metrics.max_drawdown_percent.toFixed(2)}% of capital`} />
       </div>
+      <section className="diagnostics">
+        <div className="diagnostics-heading"><span className="eyebrow">Strategy diagnostics</span><span>Decision-time context and post-trade outcomes</span></div>
+        <div className="diagnostic-overview">
+          <Diagnostic label="Avg. favourable excursion" value={`${diagnostics.excursion.average_max_favorable_r.toFixed(2)}R`} detail={`${diagnostics.excursion.reached_one_r_percent.toFixed(1)}% reached +1R`} />
+          <Diagnostic label="Avg. adverse excursion" value={`${diagnostics.excursion.average_max_adverse_r.toFixed(2)}R`} detail={`${diagnostics.excursion.reached_half_r_percent.toFixed(1)}% reached +0.5R`} />
+          <Diagnostic label="OHLC collisions" value={String(diagnostics.excursion.target_stop_collision_count)} detail="bars touching both stop and target" />
+        </div>
+        <div className="diagnostic-grid">
+          <DiagnosticTable title="Exit outcomes" headers={["Exit", "Trades", "Net P&L", "Win rate", "Avg R"]} rows={diagnostics.exit_reasons.map((item) => [item.label.replaceAll("_", " "), String(item.trade_count), money.format(item.net_profit), `${item.win_rate.toFixed(1)}%`, `${item.average_result_r.toFixed(2)}R`])} />
+          <div className="context-tables">
+            {Object.entries(diagnostics.context_outcomes).map(([key, item]) => (
+              <DiagnosticTable key={key} title={item.label} subtitle={`Signal-time value · ${item.unit}`} headers={["Range", "Trades", "Net P&L", "Win rate", "Avg R"]} rows={item.buckets.map((bucket) => [`${bucket.low.toFixed(3)}–${bucket.high.toFixed(3)}`, String(bucket.trade_count), money.format(bucket.net_profit), `${bucket.win_rate.toFixed(1)}%`, `${bucket.average_result_r.toFixed(2)}R`])} />
+            ))}
+          </div>
+        </div>
+      </section>
       <div className="result-heading">
         <div><span className="eyebrow">Trade ledger</span><h2>{analysis.trades.length} completed positions</h2></div>
         <span className="fingerprint">SAVED RUN {analysis.saved_run_id.toUpperCase()}</span>
@@ -49,6 +66,14 @@ export default function Results({ analysis }: { analysis: Analysis }) {
       </div>
     </section>
   );
+}
+
+function Diagnostic({ label, value, detail }: { label: string; value: string; detail: string }) {
+  return <div className="diagnostic"><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>;
+}
+
+function DiagnosticTable({ title, subtitle, headers, rows }: { title: string; subtitle?: string; headers: string[]; rows: string[][] }) {
+  return <section className="diagnostic-table"><div><strong>{title}</strong>{subtitle && <small>{subtitle}</small>}</div><table><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={`${title}-${index}`}>{row.map((value, column) => <td key={column}>{value}</td>)}</tr>)}</tbody></table></section>;
 }
 
 function Metric({ label, value, detail, tone }: { label: string; value: string; detail: string; tone?: string }) {

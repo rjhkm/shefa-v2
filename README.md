@@ -12,19 +12,15 @@ python -m venv .venv
 npm install
 ```
 
-Start the backend:
-
-```powershell
-.\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-In a second terminal, start the frontend:
+Start both the backend and frontend:
 
 ```powershell
 npm run dev
 ```
 
 Open `http://127.0.0.1:5173`.
+
+If you need to run only the frontend, use `npm run dev:frontend`; it requires an API already running on port 8000.
 
 ## Candle files
 

@@ -48,6 +48,38 @@ export type Trade = {
   result_r: number;
   holding_bars: number;
   signal_reason: string;
+  strategy_context: Record<string, number | null>;
+  entry_gap_price: number;
+  entry_gap_r: number;
+  max_favorable_r: number;
+  max_adverse_r: number;
+  reached_half_r: boolean;
+  reached_one_r: boolean;
+  target_stop_collision: boolean;
+};
+
+export type OutcomeSummary = {
+  label: string;
+  trade_count: number;
+  net_profit: number;
+  win_rate: number;
+  average_result_r: number;
+};
+
+export type ContextBucket = OutcomeSummary & { low: number; high: number };
+
+export type StrategyDiagnostics = {
+  schema_version: string;
+  entry_context_fields: { key: string; label: string; unit: string }[];
+  exit_reasons: OutcomeSummary[];
+  excursion: {
+    average_max_favorable_r: number;
+    average_max_adverse_r: number;
+    reached_half_r_percent: number;
+    reached_one_r_percent: number;
+    target_stop_collision_count: number;
+  };
+  context_outcomes: Record<string, { label: string; unit: string; buckets: ContextBucket[] }>;
 };
 
 export type Analysis = {
@@ -66,6 +98,7 @@ export type Analysis = {
     max_drawdown: number;
     max_drawdown_percent: number;
   };
+  strategy_diagnostics: StrategyDiagnostics;
   equity: ValuePoint[];
   drawdown: ValuePoint[];
   fingerprint: string;

@@ -56,6 +56,29 @@ def test_same_bar_collision_is_conservative_stop_first():
     assert trade["exit_price"] == 98
 
 
+def test_pip_target_is_used_when_the_strategy_supplies_one():
+    candles = frame([
+        {"open": 100, "high": 101, "low": 99, "close": 100, "signal_long": True},
+        {"open": 100, "high": 100.003, "low": 99, "close": 100},
+    ])
+    params = {**PARAMS, "take_profit_pips": 20, "pip_size": 0.0001}
+
+    trade = run_backtest(candles, params, CONFIG)["trades"][0]
+    assert trade["exit_reason"] == "target"
+    assert trade["exit_price"] == 100.002
+
+
+def test_strategy_supplied_swing_stop_is_frozen_at_the_next_open():
+    candles = frame([
+        {"open": 100, "high": 101, "low": 99, "close": 100, "signal_long": True, "signal_stop": 97},
+        {"open": 101, "high": 108, "low": 100, "close": 107},
+    ])
+    trade = run_backtest(candles, PARAMS, CONFIG)["trades"][0]
+    assert trade["initial_stop"] == 97
+    assert trade["initial_target"] == 107
+    assert trade["initial_risk_cash"] == 4
+
+
 def test_future_change_does_not_change_earlier_trade():
     candles = frame([
         {"open": 100, "high": 101, "low": 99, "close": 100, "signal_long": True},
@@ -68,6 +91,31 @@ def test_future_change_does_not_change_earlier_trade():
     original_trade = run_backtest(candles, PARAMS, CONFIG)["trades"][0]
     changed_trade = run_backtest(changed, PARAMS, CONFIG)["trades"][0]
     assert original_trade == changed_trade
+
+
+def test_trade_keeps_signal_context_and_excursion_diagnostics():
+    candles = frame([
+        {"open": 99, "high": 101, "low": 98, "close": 100, "signal_long": True, "signal_score": 0.25},
+        {"open": 101, "high": 102, "low": 100, "close": 101, "signal_score": 999, "exit_long": False},
+        {"open": 101, "high": 103, "low": 100, "close": 102, "exit_long": True},
+        {"open": 102, "high": 103, "low": 101, "close": 102},
+    ])
+    config = {
+        **CONFIG,
+        "strategy_diagnostic_schema": [
+            {"key": "signal_score", "column": "signal_score", "label": "Signal score", "unit": "index", "analyze": True}
+        ],
+    }
+    result = run_backtest(candles, PARAMS, config)
+    trade = result["trades"][0]
+
+    assert trade["strategy_context"] == {"signal_score": 0.25}
+    assert trade["entry_gap_price"] == 1
+    assert trade["entry_gap_r"] == 0.5
+    assert trade["max_favorable_r"] == 1
+    assert trade["max_adverse_r"] == 0.5
+    assert trade["reached_one_r"] is True
+    assert result["strategy_diagnostics"]["context_outcomes"]["signal_score"]["buckets"][0]["trade_count"] == 1
 
 
 def test_metric_fixture():
